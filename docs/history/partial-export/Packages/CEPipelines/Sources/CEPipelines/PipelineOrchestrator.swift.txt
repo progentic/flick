@@ -1,0 +1,187 @@
+import FlickDomain
+import CEIngestion
+import CESemantic
+import CEStorage
+import Foundation
+
+/// The scorer selected automatic filing, but the classification did not carry
+/// the fields required to materialize a visible output. This is a
+/// deterministic invariant violation: retrying would fail the same way
+/// forever. The drain routes the capture to the terminal `.failed` state and
+/// continues with the next capture instead of throwing.
+public enum PipelineError: Error, Sendable {
+    case invalidAutoFileResult(kind: CaptureKind)
+}
+
+/// Orchestration layer. Drains pending captures and composes
+/// storage → ingestion → semantic → output **via protocols** — it owns no
+/// concrete service types. Runs in the main-app process only; extension
+/// processes do capture + durable write only (ADR-0006).
+public protocol PipelineOrchestrating: Sendable {
+    /// Launch/foreground recovery: re-enqueue captures stuck in `.processing`.
+    func recoverInterrupted() async throws
+    /// Drain loop: claim → ingest → classify → route → persist local outputs.
+    /// At-least-once processing with duplicate-resistant local output
+    /// creation. The concrete store must enforce persistent uniqueness on
+    /// `outputIdempotencyKey`. A deterministic invariant violation — an
+    /// auto-file classification that cannot materialize any output — fails
+    /// the capture durably to `.failed` and the drain continues. External
+    /// exports such as EventKit run through a separate persisted
+    /// delivery/reconciliation state machine.
+    func drainPending() async throws
+}
+
+public actor PipelineOrchestrator: PipelineOrchestrating {
+    private let queue: any ProcessingQueue
+    private let ingestion: any IngestionServing
+    private let backend: any SemanticBackend
+    private let scorer: any ConfidenceScoring
+    private let tasks: any TaskStoring
+    private let events: any EventDraftStoring
+    private let notes: any NoteStoring
+    private let plans: any FilingPlanStoring
+
+    public init(
+        queue: any ProcessingQueue,
+        ingestion: any IngestionServing,
+        backend: any SemanticBackend,
+        scorer: any ConfidenceScoring,
+        tasks: any TaskStoring,
+        events: any EventDraftStoring,
+        notes: any NoteStoring,
+        plans: any FilingPlanStoring
+    ) {
+        self.queue = queue
+        self.ingestion = ingestion
+        self.backend = backend
+        self.scorer = scorer
+        self.tasks = tasks
+        self.events = events
+        self.notes = notes
+        self.plans = plans
+    }
+
+    public func recoverInterrupted() async throws {
+        _ = try await queue.requeueInterrupted()
+    }
+
+    public func drainPending() async throws {
+        while let capture = try await queue.claimNextPending() {
+            do {
+                try await process(capture)
+            } catch PipelineError.invalidAutoFileResult {
+                // Deterministic invariant violation: no retry can fix it, and
+                // leaving the capture in `.processing` would poison the queue —
+                // the drain would stop here and every recovery would fail the
+                // same way. Fail it durably and continue (ADR-0006).
+                try await queue.markFailed(captureID: capture.id)
+            }
+        }
+    }
+
+    /// Processes one claimed capture: resumes a persisted plan when one
+    /// exists, otherwise ingests → classifies → routes → persists local
+    /// outputs. Throws `PipelineError.invalidAutoFileResult` when automatic
+    /// filing was selected but the classification cannot materialize any
+    /// output; the caller routes that case to `.failed`.
+    private func process(_ capture: Capture) async throws {
+        // Crash recovery: a persisted plan means a previous attempt died
+        // mid-filing. Resume that exact plan — never re-run
+        // classification, whose result ordering is not stable across
+        // runs. Reclassifying after a partial filing could renumber
+        // outputs and defeat the idempotency keys (ADR-0006).
+        if let persisted = try await plans.plan(for: capture.id) {
+            try await fileAndComplete(plan: persisted)
+        } else {
+            let ingested = try await ingestion.ingest(capture)
+            let result = try await backend.classify(ingested)
+            switch scorer.score(result) {
+            case .autoFile:
+                // The crash-recovery boundary: the complete plan is
+                // persisted BEFORE the first filing side effect below. A
+                // retry finds this plan and resumes it instead of
+                // re-running the mapping (ADR-0006).
+                let candidate = FilingPlan(
+                    captureID: capture.id,
+                    intents: try Self.filingIntents(
+                        from: result,
+                        sourceText: ingested.rawText
+                    )
+                )
+                let persisted = try await plans.saveIfAbsent(candidate)
+                try await fileAndComplete(plan: persisted)
+            case .unsorted:
+                try await queue.markUnsorted(captureID: capture.id)
+            }
+        }
+    }
+
+    /// Files local outputs, then atomically records the capture's completion
+    /// and removes its plan. A failure before that transaction commits leaves
+    /// the plan available for recovery.
+    private func fileAndComplete(plan: FilingPlan) async throws {
+        let linkedObjectIDs = try await file(plan: plan)
+        try await plans.completeFiling(
+            captureID: plan.captureID,
+            linkedObjectIDs: linkedObjectIDs
+        )
+    }
+
+    /// Files every entry of a plan. Each entry carries its own capture
+    /// identity, payload, and ordinal, and the outputs derive their
+    /// idempotency keys from the entry alone — so re-filing a resumed plan
+    /// reproduces the same keys, and the stores' uniqueness constraints
+    /// suppress duplicates under at-least-once reprocessing (ADR-0006).
+    private func file(plan: FilingPlan) async throws -> [UUID] {
+        var linkedObjectIDs: [UUID] = []
+        linkedObjectIDs.reserveCapacity(plan.entries.count)
+
+        for entry in plan.entries {
+            let outputID: UUID
+            switch entry.intent {
+            case .task:
+                outputID = try await tasks.save(TaskItem(entry: entry))
+            case .event:
+                // Persist the local draft and pending delivery record only.
+                // EventKit export runs in a separate stateful delivery worker;
+                // this retryable loop must never blindly repeat it.
+                outputID = try await events.save(CalendarEventDraft(entry: entry))
+            case .note:
+                outputID = try await notes.save(NoteItem(entry: entry))
+            }
+            linkedObjectIDs.append(outputID)
+        }
+        return linkedObjectIDs
+    }
+
+    /// Maps one classification result to its filing intents. Runs exactly once
+    /// per capture: the persisted plan — not a second classification pass —
+    /// is what retries resume.
+    private static func filingIntents(
+        from result: ClassificationResult,
+        sourceText: String
+    ) throws -> [FilingIntent] {
+        switch result.kind {
+        case .task:
+            return [.task(title: result.actionTitle ?? result.summary ?? "",
+                          dueDate: result.dueDate,
+                          subtasks: [])]
+        case .event:
+            guard let start = result.dueDate else {
+                throw PipelineError.invalidAutoFileResult(kind: .event)
+            }
+            return [.event(title: result.actionTitle ?? "",
+                           start: start,
+                           end: nil,
+                           location: result.location)]
+        case .note:
+            return [.note(
+                summary: result.summary ?? result.actionTitle ?? sourceText,
+                fullText: sourceText,
+                entities: result.entities
+            )]
+        case .unclear:
+            throw PipelineError.invalidAutoFileResult(kind: .unclear)
+        }
+    }
+}

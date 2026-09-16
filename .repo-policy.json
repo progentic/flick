@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "tools": "6.3",
+  "language": "6",
+  "ios": "26",
+  "packages": {
+    "FlickDomain": [],
+    "CECapture": [
+      "FlickDomain"
+    ],
+    "CEIngestion": [
+      "FlickDomain"
+    ],
+    "CESemantic": [
+      "FlickDomain"
+    ],
+    "CEStorage": [
+      "FlickDomain"
+    ],
+    "CEOutput": [
+      "FlickDomain"
+    ],
+    "CEPipelines": [
+      "FlickDomain",
+      "CEIngestion",
+      "CESemantic",
+      "CEStorage",
+      "CEOutput"
+    ],
+    "CEUI": [
+      "FlickDomain",
+      "CECapture"
+    ]
+  },
+  "test_packages": [
+    "FlickDomain"
+  ],
+  "app_project": "App/Flick.xcodeproj",
+  "app_scheme": "Flick"
+}

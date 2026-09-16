@@ -1,0 +1,573 @@
+import CEIngestion
+import CESemantic
+import CEStorage
+import FlickDomain
+import Foundation
+import Testing
+
+@testable import CEPipelines
+
+private enum StubError: Error {
+    case completionFailed
+    case outputFailed
+}
+
+private actor CallRecorder {
+    private var calls: [String] = []
+
+    func record(_ call: String) {
+        calls.append(call)
+    }
+
+    func snapshot() -> [String] {
+        calls
+    }
+
+    func count(of call: String) -> Int {
+        calls.filter { $0 == call }.count
+    }
+}
+
+private actor QueueStub: ProcessingQueue {
+    private var captures: [Capture]
+    private var unsortedCaptureIDs: Set<UUID> = []
+    private var failedCaptureIDs: Set<UUID> = []
+    private let recorder: CallRecorder
+
+    init(captures: [Capture], recorder: CallRecorder) {
+        self.captures = captures
+        self.recorder = recorder
+    }
+
+    func claimNextPending() async throws -> Capture? {
+        await recorder.record("queue.claim")
+        // The real store only claims `.pending` rows; terminal states are
+        // never re-claimed, even if a recovery scan resurfaces the capture.
+        while !captures.isEmpty {
+            let capture = captures.removeFirst()
+            if failedCaptureIDs.contains(capture.id)
+                || unsortedCaptureIDs.contains(capture.id)
+            {
+                continue
+            }
+            return capture
+        }
+        return nil
+    }
+
+    func requeueInterrupted() async throws -> Int {
+        0
+    }
+
+    func markUnsorted(captureID: UUID) async throws {
+        await recorder.record("queue.unsorted")
+        unsortedCaptureIDs.insert(captureID)
+    }
+
+    func markFailed(captureID: UUID) async throws {
+        await recorder.record("queue.failed")
+        failedCaptureIDs.insert(captureID)
+    }
+
+    func isUnsorted(_ captureID: UUID) -> Bool {
+        unsortedCaptureIDs.contains(captureID)
+    }
+
+    func isFailed(_ captureID: UUID) -> Bool {
+        failedCaptureIDs.contains(captureID)
+    }
+
+    /// Test helper: emulates a recovery scan resurfacing a capture row. The
+    /// durable terminal state still wins at claim time.
+    func addPending(_ capture: Capture) {
+        captures.append(capture)
+    }
+}
+
+private struct IngestionStub: IngestionServing {
+    let recorder: CallRecorder
+
+    func ingest(_ capture: Capture) async throws -> IngestedContent {
+        await recorder.record("ingest")
+        return IngestedContent(rawText: "Buy milk", sourceType: capture.source)
+    }
+}
+
+private struct BackendStub: SemanticBackend {
+    let results: [ClassificationResult]
+    let recorder: CallRecorder
+
+    init(result: ClassificationResult, recorder: CallRecorder) {
+        self.init(results: [result], recorder: recorder)
+    }
+
+    init(results: [ClassificationResult], recorder: CallRecorder) {
+        self.results = results
+        self.recorder = recorder
+    }
+
+    func classify(_ content: IngestedContent) async throws -> ClassificationResult {
+        await recorder.record("classify")
+        let index = await recorder.count(of: "classify") - 1
+        return results[min(index, results.count - 1)]
+    }
+}
+
+private struct ScorerStub: ConfidenceScoring {
+    let decision: RoutingDecision
+
+    func score(_ result: ClassificationResult) -> RoutingDecision {
+        decision
+    }
+}
+
+private actor TaskStoreStub: TaskStoring {
+    private var stored: [OutputIdempotencyKey: TaskItem] = [:]
+    private var saveFailuresRemaining: Int
+    private let recorder: CallRecorder
+
+    init(saveFailures: Int = 0, recorder: CallRecorder) {
+        self.saveFailuresRemaining = saveFailures
+        self.recorder = recorder
+    }
+
+    func save(_ task: TaskItem) async throws -> UUID {
+        await recorder.record("task.save")
+        if saveFailuresRemaining > 0 {
+            saveFailuresRemaining -= 1
+            throw StubError.outputFailed
+        }
+        if let existing = stored[task.outputIdempotencyKey] {
+            return existing.id
+        }
+        stored[task.outputIdempotencyKey] = task
+        return task.id
+    }
+
+    func tasks() async throws -> [TaskItem] {
+        Array(stored.values)
+    }
+
+    func count() -> Int {
+        stored.count
+    }
+}
+
+private actor NoteStoreStub: NoteStoring {
+    private var stored: [OutputIdempotencyKey: NoteItem] = [:]
+    private let recorder: CallRecorder
+
+    init(recorder: CallRecorder) {
+        self.recorder = recorder
+    }
+
+    func save(_ note: NoteItem) async throws -> UUID {
+        await recorder.record("note.save")
+        if let existing = stored[note.outputIdempotencyKey] {
+            return existing.id
+        }
+        stored[note.outputIdempotencyKey] = note
+        return note.id
+    }
+
+    func notes() async throws -> [NoteItem] {
+        Array(stored.values)
+    }
+}
+
+private actor EventStoreStub: EventDraftStoring {
+    private var stored: [OutputIdempotencyKey: CalendarEventDraft] = [:]
+    private var pendingDeliveryKeys: Set<OutputIdempotencyKey> = []
+    private let recorder: CallRecorder
+
+    init(recorder: CallRecorder) {
+        self.recorder = recorder
+    }
+
+    func save(_ draft: CalendarEventDraft) async throws -> UUID {
+        await recorder.record("event.save")
+        if let existing = stored[draft.outputIdempotencyKey] {
+            return existing.id
+        }
+        stored[draft.outputIdempotencyKey] = draft
+        pendingDeliveryKeys.insert(draft.outputIdempotencyKey)
+        return draft.id
+    }
+
+    func drafts() async throws -> [CalendarEventDraft] {
+        Array(stored.values)
+    }
+
+    func count() -> Int {
+        stored.count
+    }
+
+    func pendingDeliveryCount() -> Int {
+        pendingDeliveryKeys.count
+    }
+}
+
+private actor PlanStoreStub: FilingPlanStoring {
+    private var stored: [UUID: FilingPlan]
+    private var completedLinks: [UUID: [UUID]] = [:]
+    private var completionFailuresRemaining: Int
+    private let recorder: CallRecorder
+
+    init(
+        stored: [UUID: FilingPlan] = [:],
+        completionFailures: Int = 0,
+        recorder: CallRecorder
+    ) {
+        self.stored = stored
+        self.completionFailuresRemaining = completionFailures
+        self.recorder = recorder
+    }
+
+    func saveIfAbsent(_ candidate: FilingPlan) async throws -> FilingPlan {
+        await recorder.record("plan.save")
+        if let existing = stored[candidate.captureID] {
+            return existing
+        }
+        stored[candidate.captureID] = candidate
+        return candidate
+    }
+
+    func plan(for captureID: UUID) async throws -> FilingPlan? {
+        await recorder.record("plan.lookup")
+        return stored[captureID]
+    }
+
+    func completeFiling(captureID: UUID, linkedObjectIDs: [UUID]) async throws {
+        await recorder.record("plan.complete")
+        if completionFailuresRemaining > 0 {
+            completionFailuresRemaining -= 1
+            throw StubError.completionFailed
+        }
+        completedLinks[captureID] = linkedObjectIDs
+        stored[captureID] = nil
+    }
+
+    func containsPlan(for captureID: UUID) -> Bool {
+        stored[captureID] != nil
+    }
+
+    func links(for captureID: UUID) -> [UUID]? {
+        completedLinks[captureID]
+    }
+}
+
+@Suite("Pipeline filing recovery")
+struct PipelineOrchestratorTests {
+    private func capture(id: UUID = UUID()) -> Capture {
+        Capture(
+            id: id,
+            source: .text,
+            rawContentRef: .inlineText("Buy milk")
+        )
+    }
+
+    private func taskResult() -> ClassificationResult {
+        ClassificationResult(kind: .task, actionTitle: "Buy milk", confidence: 1)
+    }
+
+    private func makePipeline(
+        queue: QueueStub,
+        recorder: CallRecorder,
+        result: ClassificationResult,
+        decision: RoutingDecision = .autoFile,
+        tasks: TaskStoreStub,
+        events: EventStoreStub,
+        notes: NoteStoreStub,
+        plans: PlanStoreStub
+    ) -> PipelineOrchestrator {
+        makePipeline(
+            queue: queue,
+            recorder: recorder,
+            results: [result],
+            decision: decision,
+            tasks: tasks,
+            events: events,
+            notes: notes,
+            plans: plans
+        )
+    }
+
+    private func makePipeline(
+        queue: QueueStub,
+        recorder: CallRecorder,
+        results: [ClassificationResult],
+        decision: RoutingDecision = .autoFile,
+        tasks: TaskStoreStub,
+        events: EventStoreStub,
+        notes: NoteStoreStub,
+        plans: PlanStoreStub
+    ) -> PipelineOrchestrator {
+        PipelineOrchestrator(
+            queue: queue,
+            ingestion: IngestionStub(recorder: recorder),
+            backend: BackendStub(results: results, recorder: recorder),
+            scorer: ScorerStub(decision: decision),
+            tasks: tasks,
+            events: events,
+            notes: notes,
+            plans: plans
+        )
+    }
+
+    @Test("A persisted plan bypasses ingestion and classification")
+    func persistedPlanBypassesClassification() async throws {
+        let recorder = CallRecorder()
+        let capture = capture()
+        let persisted = FilingPlan(captureID: capture.id, intents: [
+            .task(title: "Persisted title", dueDate: nil, subtasks: [])
+        ])
+        let queue = QueueStub(captures: [capture], recorder: recorder)
+        let tasks = TaskStoreStub(recorder: recorder)
+        let events = EventStoreStub(recorder: recorder)
+        let notes = NoteStoreStub(recorder: recorder)
+        let plans = PlanStoreStub(stored: [capture.id: persisted], recorder: recorder)
+        let pipeline = makePipeline(
+            queue: queue,
+            recorder: recorder,
+            result: taskResult(),
+            tasks: tasks,
+            events: events,
+            notes: notes,
+            plans: plans
+        )
+
+        try await pipeline.drainPending()
+
+        let calls = await recorder.snapshot()
+        #expect(!calls.contains("ingest"))
+        #expect(!calls.contains("classify"))
+        #expect(calls.contains("task.save"))
+        #expect(calls.contains("plan.complete"))
+    }
+
+    @Test("A new plan commits before the first output save")
+    func planCommitsBeforeOutput() async throws {
+        let recorder = CallRecorder()
+        let capture = capture()
+        let queue = QueueStub(captures: [capture], recorder: recorder)
+        let tasks = TaskStoreStub(recorder: recorder)
+        let events = EventStoreStub(recorder: recorder)
+        let notes = NoteStoreStub(recorder: recorder)
+        let plans = PlanStoreStub(recorder: recorder)
+        let pipeline = makePipeline(
+            queue: queue,
+            recorder: recorder,
+            result: taskResult(),
+            tasks: tasks,
+            events: events,
+            notes: notes,
+            plans: plans
+        )
+
+        try await pipeline.drainPending()
+
+        let calls = await recorder.snapshot()
+        let planSave = try #require(calls.firstIndex(of: "plan.save"))
+        let taskSave = try #require(calls.firstIndex(of: "task.save"))
+        let completion = try #require(calls.firstIndex(of: "plan.complete"))
+        #expect(planSave < taskSave)
+        #expect(taskSave < completion)
+    }
+
+    @Test("A failed completion retains the plan and retry returns canonical output IDs")
+    func failedCompletionRetainsPlan() async throws {
+        let recorder = CallRecorder()
+        let capture = capture()
+        let tasks = TaskStoreStub(recorder: recorder)
+        let events = EventStoreStub(recorder: recorder)
+        let notes = NoteStoreStub(recorder: recorder)
+        let plans = PlanStoreStub(completionFailures: 1, recorder: recorder)
+
+        let firstQueue = QueueStub(captures: [capture], recorder: recorder)
+        let firstPipeline = makePipeline(
+            queue: firstQueue,
+            recorder: recorder,
+            result: taskResult(),
+            tasks: tasks,
+            events: events,
+            notes: notes,
+            plans: plans
+        )
+
+        await #expect(throws: StubError.self) {
+            try await firstPipeline.drainPending()
+        }
+        let retainedAfterFailure = await plans.containsPlan(for: capture.id)
+        #expect(retainedAfterFailure)
+
+        let secondQueue = QueueStub(captures: [capture], recorder: recorder)
+        let secondPipeline = makePipeline(
+            queue: secondQueue,
+            recorder: recorder,
+            result: taskResult(),
+            tasks: tasks,
+            events: events,
+            notes: notes,
+            plans: plans
+        )
+        try await secondPipeline.drainPending()
+
+        let taskCount = await tasks.count()
+        let linkedObjectIDs = await plans.links(for: capture.id)
+        let retainedAfterSuccess = await plans.containsPlan(for: capture.id)
+        let calls = await recorder.snapshot()
+        #expect(taskCount == 1)
+        #expect(linkedObjectIDs?.count == 1)
+        #expect(!retainedAfterSuccess)
+        #expect(calls.filter { $0 == "ingest" }.count == 1)
+        #expect(calls.filter { $0 == "classify" }.count == 1)
+        #expect(calls.filter { $0 == "task.save" }.count == 2)
+    }
+
+    @Test("An output failure retains the plan and does not complete the capture")
+    func outputFailureRetainsPlan() async {
+        let recorder = CallRecorder()
+        let capture = capture()
+        let queue = QueueStub(captures: [capture], recorder: recorder)
+        let tasks = TaskStoreStub(saveFailures: 1, recorder: recorder)
+        let events = EventStoreStub(recorder: recorder)
+        let notes = NoteStoreStub(recorder: recorder)
+        let plans = PlanStoreStub(recorder: recorder)
+        let pipeline = makePipeline(
+            queue: queue,
+            recorder: recorder,
+            result: taskResult(),
+            tasks: tasks,
+            events: events,
+            notes: notes,
+            plans: plans
+        )
+
+        await #expect(throws: StubError.self) {
+            try await pipeline.drainPending()
+        }
+
+        let retained = await plans.containsPlan(for: capture.id)
+        let calls = await recorder.snapshot()
+        #expect(retained)
+        #expect(!calls.contains("plan.complete"))
+    }
+
+    @Test("Unsorted routing is persisted without creating a filing plan")
+    func unsortedIsPersisted() async throws {
+        let recorder = CallRecorder()
+        let capture = capture()
+        let queue = QueueStub(captures: [capture], recorder: recorder)
+        let tasks = TaskStoreStub(recorder: recorder)
+        let events = EventStoreStub(recorder: recorder)
+        let notes = NoteStoreStub(recorder: recorder)
+        let plans = PlanStoreStub(recorder: recorder)
+        let pipeline = makePipeline(
+            queue: queue,
+            recorder: recorder,
+            result: taskResult(),
+            decision: .unsorted,
+            tasks: tasks,
+            events: events,
+            notes: notes,
+            plans: plans
+        )
+
+        try await pipeline.drainPending()
+
+        let isUnsorted = await queue.isUnsorted(capture.id)
+        let hasPlan = await plans.containsPlan(for: capture.id)
+        #expect(isUnsorted)
+        #expect(!hasPlan)
+    }
+
+    @Test("Event filing stores a local draft and pending delivery instead of calling EventKit")
+    func eventFilingIsLocal() async throws {
+        let recorder = CallRecorder()
+        let capture = capture()
+        let queue = QueueStub(captures: [capture], recorder: recorder)
+        let tasks = TaskStoreStub(recorder: recorder)
+        let events = EventStoreStub(recorder: recorder)
+        let notes = NoteStoreStub(recorder: recorder)
+        let plans = PlanStoreStub(recorder: recorder)
+        let result = ClassificationResult(
+            kind: .event,
+            actionTitle: "Dentist",
+            dueDate: Date(timeIntervalSince1970: 1_800_000_000),
+            confidence: 1
+        )
+        let pipeline = makePipeline(
+            queue: queue,
+            recorder: recorder,
+            result: result,
+            tasks: tasks,
+            events: events,
+            notes: notes,
+            plans: plans
+        )
+
+        try await pipeline.drainPending()
+
+        let eventCount = await events.count()
+        let pendingDeliveryCount = await events.pendingDeliveryCount()
+        let linkedObjectIDs = await plans.links(for: capture.id)
+        let calls = await recorder.snapshot()
+        #expect(eventCount == 1)
+        #expect(pendingDeliveryCount == 1)
+        #expect(linkedObjectIDs?.count == 1)
+        #expect(calls.contains("event.save"))
+    }
+
+    @Test("An invalid auto-file result fails the capture durably and the drain continues")
+    func invalidAutoFileResultFailsDurably() async throws {
+        let recorder = CallRecorder()
+        let poisoned = capture()
+        let healthy = capture()
+        let queue = QueueStub(captures: [poisoned, healthy], recorder: recorder)
+        let tasks = TaskStoreStub(recorder: recorder)
+        let events = EventStoreStub(recorder: recorder)
+        let notes = NoteStoreStub(recorder: recorder)
+        let plans = PlanStoreStub(recorder: recorder)
+        // An event auto-file without a date cannot materialize any output:
+        // a deterministic invariant violation, not a retryable failure.
+        let poisonedResult = ClassificationResult(kind: .event, confidence: 1)
+        let pipeline = makePipeline(
+            queue: queue,
+            recorder: recorder,
+            results: [poisonedResult, taskResult()],
+            tasks: tasks,
+            events: events,
+            notes: notes,
+            plans: plans
+        )
+
+        // Must not throw: the poisoned capture fails durably, the drain
+        // moves on to the healthy capture.
+        try await pipeline.drainPending()
+
+        let isFailed = await queue.isFailed(poisoned.id)
+        let poisonedPlan = await plans.containsPlan(for: poisoned.id)
+        let healthyLinks = await plans.links(for: healthy.id)
+        let taskCount = await tasks.count()
+        let calls = await recorder.snapshot()
+        #expect(isFailed)
+        #expect(!poisonedPlan)
+        #expect(healthyLinks?.count == 1)
+        #expect(taskCount == 1)
+        #expect(calls.filter { $0 == "plan.save" }.count == 1)
+        #expect(calls.filter { $0 == "queue.failed" }.count == 1)
+
+        // Retry pass: a recovery scan that resurfaces the failed capture must
+        // not reprocess it — the durable `.failed` state wins at claim time.
+        await queue.addPending(poisoned)
+        try await pipeline.drainPending()
+
+        let callsAfterRetry = await recorder.snapshot()
+        let stillFailed = await queue.isFailed(poisoned.id)
+        let taskCountAfterRetry = await tasks.count()
+        #expect(stillFailed)
+        #expect(taskCountAfterRetry == 1)
+        #expect(callsAfterRetry.filter { $0 == "queue.failed" }.count == 1)
+        #expect(callsAfterRetry.filter { $0 == "task.save" }.count == 1)
+    }
+}

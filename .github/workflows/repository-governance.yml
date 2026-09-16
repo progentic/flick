@@ -1,0 +1,29 @@
+name: Repository Governance
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  governance:
+    runs-on: ubuntu-24.04
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6, resolved 2026-09-16
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Governance negative controls
+        run: python3 -m unittest discover -s scripts/tests -v
+      - name: Portable repository governance
+        run: bash scripts/repo-enforce.sh
+      - name: UI governance
+        run: bash scripts/ui-enforce.sh
+      - name: Whitespace and shell syntax
+        run: |
+          git diff --check "$BASE_SHA" HEAD
+          for script in scripts/*.sh; do bash -n "$script"; done

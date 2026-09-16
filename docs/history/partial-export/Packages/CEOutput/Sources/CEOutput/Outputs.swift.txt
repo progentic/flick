@@ -1,0 +1,24 @@
+import FlickDomain
+import Foundation
+
+/// Performs one Calendar export attempt. The delivery worker MUST durably move
+/// the draft's delivery record out of `.pending` before calling this adapter.
+/// A crash or error after the call begins is ambiguous and MUST NOT be retried
+/// automatically under write-only EventKit access. Implementations request
+/// write-only access by default; full access is reserved for the explicit
+/// calendar-grounding opt-in (ADR-0002, ADR-0006). A successful call returns
+/// the `EKEvent.eventIdentifier` for the delivery record.
+public protocol EventExporting: Sendable {
+    func export(_ draft: CalendarEventDraft) async throws -> String
+}
+
+/// Tools handed to the classifier for grounded extraction (ADR-0001).
+/// `CalendarLookupTool` requires full calendar access and is only available
+/// when the user enables the grounding opt-in.
+public protocol OutputTools: Sendable {
+    func calendarLookup() async throws -> CalendarLookupTool?
+    func existingProjects() async throws -> ExistingProjectsTool
+}
+
+public struct CalendarLookupTool: Sendable {}
+public struct ExistingProjectsTool: Sendable {}

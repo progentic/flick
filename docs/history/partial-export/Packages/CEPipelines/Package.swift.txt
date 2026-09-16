@@ -1,0 +1,40 @@
+// swift-tools-version: 6.3
+// Validated toolchain: Xcode 26.6 / Swift 6.3.
+// See docs/RELEASES.md for the promotion policy.
+import PackageDescription
+
+let package = Package(
+    name: "CEPipelines",
+    platforms: [.iOS(.v26)],
+    products: [
+        .library(name: "CEPipelines", targets: ["CEPipelines"]),
+    ],
+    dependencies: [
+        .package(path: "../FlickDomain"),
+        .package(path: "../CEIngestion"),
+        .package(path: "../CESemantic"),
+        .package(path: "../CEStorage")
+    ],
+    targets: [
+        .target(
+            name: "CEPipelines",
+            dependencies: [
+                .product(name: "FlickDomain", package: "FlickDomain"),
+                .product(name: "CEIngestion", package: "CEIngestion"),
+                .product(name: "CESemantic", package: "CESemantic"),
+                .product(name: "CEStorage", package: "CEStorage")
+            ]
+        ),
+        .testTarget(
+            name: "CEPipelinesTests",
+            dependencies: [
+                "CEPipelines",
+                .product(name: "FlickDomain", package: "FlickDomain"),
+                .product(name: "CEIngestion", package: "CEIngestion"),
+                .product(name: "CESemantic", package: "CESemantic"),
+                .product(name: "CEStorage", package: "CEStorage")
+            ]
+        ),
+    ],
+    swiftLanguageModes: [.v6]
+)
