@@ -33,8 +33,31 @@
     ]
   },
   "test_packages": [
-    "FlickDomain"
+    "FlickDomain",
+    "CECapture",
+    "CEIngestion",
+    "CEStorage",
+    "CEPipelines",
+    "CEUI"
   ],
   "app_project": "App/Flick.xcodeproj",
-  "app_scheme": "Flick"
+  "app_scheme": "Flick",
+  "system_imports": {
+    "CECapture": [
+      "OSLog"
+    ],
+    "CEStorage": [
+      "SwiftData",
+      "OSLog"
+    ],
+    "CEUI": [
+      "SwiftUI",
+      "Observation"
+    ],
+    "CEPipelines": [
+      "OSLog"
+    ]
+  },
+  "app_bundle_identifier": "com.progentic.flick",
+  "app_group_identifier": "group.com.progentic.flick"
 }

@@ -8,7 +8,10 @@ This file is the operating contract for coding agents working on Flick.
 
 ## Current baseline
 
-The repository is at conceptual state `v0.0.0`: blank/unproven.
+The validated repository bootstrap is `f802005ad49e9b3074cbc2bc35d6212dedc2ade8`.
+Its hosted governance and package CI passed. The active working-tree milestone
+is v0.1.0; do not extend the bootstrap result to uncommitted application changes.
+No v0.0.1 tag was present when v0.1.0 work began.
 
 Do not infer implementation completeness from:
 

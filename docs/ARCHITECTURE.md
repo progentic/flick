@@ -1,6 +1,8 @@
 # Architecture
 
-> Baseline note: `v0.0.0` contains no accepted implementation. This document defines the target architecture to be established incrementally from `v0.0.1` onward. Historical partial-source exports are evidence only.
+> Baseline: bootstrap commit `f802005` passed hosted CI. The v0.1.0 text kernel
+> described below is an uncommitted candidate; later-milestone architecture remains
+> proposed. Historical partial-source exports are evidence only.
 
 Version: 1.0
 Last Reviewed: 2026-09-16
@@ -12,6 +14,56 @@ Status: Proposed target architecture
 ## Naming
 
 `FlickDomain` is the canonical domain package name. Any historical `CEDomain` reference is stale and must not be reintroduced.
+
+## Implemented v0.1.0 text-kernel boundaries
+
+- `App/Flick.xcodeproj`, target/scheme `Flick`, is the composition/lifecycle root.
+  Bundle ID: `com.progentic.flick`; App Group: `group.com.progentic.flick`.
+  Entitlements reserve that namespace; physical-device provisioning still requires
+  the owner's Apple development team. Simulator runtime tests use ad-hoc signing
+  so the App Group entitlement is actually registered.
+- `CECapture.CaptureCoordinator` validates nonempty text and awaits an injected
+  asynchronous persistence capability. It preserves original text and creates a
+  new capture identity for each independent action. No content deduplication.
+- `CEStorage.TextStore` is a dedicated `@ModelActor`, constructed off MainActor.
+  It owns Schema V1 and an explicit, local-only ModelConfiguration beneath the
+  App Group container. Autosave is disabled. No ModelContext/model crosses its
+  actor boundary; callers receive Sendable domain snapshots or signals to reload.
+- A capture owns its local Note through a cascade relationship. Completion
+  inserts the Note and changes capture state to filed in one explicit save.
+  A persistent unique output key plus serialized completion prevent duplicate
+  visible Notes. A failed save rolls back the entire context operation.
+- `CEIngestion.TextIngestion` returns the original text unchanged. The focused
+  `CEPipelines.TextNotePlanner` makes one ordinal-zero Note. `TextKernel` only
+  recovers/selects work, sequences stages, and finalizes. It coalesces overlapping
+  drains so recovery cannot reset an active claim.
+- State transitions: pending→processing→filed/failed; interrupted processing→pending
+  only through recovery; failed→pending only through explicit retry. Unsorted is
+  not part of this kernel. A deterministic ingestion failure marks only that
+  capture failed; a persistence failure stops the drain with recoverable state.
+- Capture deletion removes its Note in the same save. If deletion wins while
+  processing is suspended, completion cannot recreate the missing capture/Note.
+  Independent Note deletion/editing does not exist in this slice.
+- CEUI's MainActor model consumes persisted snapshots; it never inserts an
+  optimistic feed row. Success follows capture-save completion. Async change
+  signals trigger reloads, including intermediate processing state. New draft
+  text clears the previous capture's success feedback.
+- SwiftData/SwiftUI/Observation/OSLog imports are permitted only in their owning
+  packages by `.repo-policy.json`. Domain remains Foundation-only. macOS 14 is
+  an additional host-test minimum for packages using those frameworks; iOS 26,
+  tools 6.3, and Swift 6 mode are unchanged.
+
+Schema V1 is the development migration baseline; future stored-model changes
+need a new schema version and tested migration stages. No store is erased or
+replaced when opening existing data fails. Debug-only UI-test configuration uses
+isolated UUID-named stores and real read-only stores/boundary delays; it is absent
+from Release. No semantic, EventKit, voice, media, or background-task feature is
+implemented in this milestone.
+
+The `TextV1.store` path and `FlickTextV1` configuration name are stable storage
+identities. A future schema version must migrate that existing store rather than
+silently switch to a new filename. The encoded Note payload is part of schema
+compatibility: breaking Codable changes require an explicit payload migration.
 
 ## System Purpose
 
@@ -288,3 +340,13 @@ See `docs/adr/README.md`. All records below are **Proposed** (none accepted):
 - ADR-0005: Local-Processing Data-Egress Property.
 - ADR-0006: App Group Persistence and Capture-Surface Execution Boundaries (surface-specific targets; ingress idempotency separate from output idempotency; extension composition root).
 - ADR-0007: Apple Sample-Code Extrapolation Rulings.
+
+## Text state and diagnostic ownership
+
+CEUI owns transient idle/saving/saved/failed presentation; the two-second Saved
+indicator follows durable acknowledgement. Feed status comes from persisted
+snapshots. A failed drain marks unfinished rows as needing recovery without
+pretending their durable status changed. Storage, capture, pipeline, and app
+composition write their own structured OSLog events. FlickDomain supplies only
+a Foundation-based diagnostic value/serializer; it imports neither OSLog nor
+SwiftData. Safe error taxonomy is separate from short user-facing copy.

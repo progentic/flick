@@ -18,6 +18,26 @@ app version/build number, iOS version, device model, and steps to reproduce.
 
 ## Supported Versions
 
+The v0.1.0 candidate is local development code, not a distributed release.
+Its bundle identifier is `com.progentic.flick` and its reserved App Group is
+`group.com.progentic.flick`. The app fails visibly if that container cannot be
+opened; it never silently substitutes a different store. No account, network,
+microphone, photo, or calendar capability is added by the text kernel.
+
+Capture success telemetry records time-to-durable-save milliseconds. Structured
+failure diagnostics record operation/category, opaque capture/output identifiers,
+state/stage, attempt scope/count, duration, recovery, store mode, and bounded
+error type/domain/code chains. Only authored static reason identifiers and
+allowlisted error domains are included. Unknown domains are redacted. Error
+descriptions, userInfo dictionaries, paths, note text, transcripts, OCR content,
+prompts, and extracted fields are excluded. Attempt counts are scoped to a
+request, store instance, kernel instance, or application session; they are not
+durable cross-launch retry counts. Storage `state` is a best-effort actor-context
+snapshot after failure and can include an in-flight transition; `expected_state`
+is the operation's precondition. Neither is proof of committed disk state;
+reopen/integration tests establish durability. Debug UI-test configuration is
+isolated under UUID-named directories and excluded from Release builds.
+
 At `v0.0.0` there is no supported application binary. Once pre-1.0 TestFlight distribution begins, only the latest TestFlight build is supported.
 After 1.0.0, the current App Store release and the current TestFlight beta are
 supported; older builds should update.

@@ -94,6 +94,13 @@ def check_metadata():
         status = [line.rstrip(' \\') for line in matches[0].read_text().splitlines() if line.startswith('Status:')]
         assert status == ['Status: Proposed'], f'ADR-{number:04} requires owner acceptance'
     assert '@progentic' in (ROOT / '.github/CODEOWNERS').read_text(), 'CODEOWNERS must name progentic'
+    if (ROOT / 'App/Flick.xcodeproj').exists():
+        assert (ROOT / 'CHANGELOG.md').is_file(), 'application changes need CHANGELOG.md'
+        assert (ROOT / 'App/Flick.xcodeproj/xcshareddata/xcschemes/Flick.xcscheme').is_file(), 'shared Flick scheme missing'
+        project = (ROOT / 'App/Flick.xcodeproj/project.pbxproj').read_text()
+        assert 'IPHONEOS_DEPLOYMENT_TARGET = "26.0"' in project, 'app iOS 26 target missing'
+        assert 'SWIFT_STRICT_CONCURRENCY = "complete"' in project, 'strict concurrency missing'
+        assert 'INFOPLIST_KEY_UIUserInterfaceStyle = "Automatic"' in project, 'explicit system appearance support missing'
     print('PASS: metadata, exact license, and Proposed ADR status')
 
 
@@ -106,12 +113,12 @@ def check_packages(policy):
         manifest = (base / 'Package.swift').read_text()
         assert manifest.startswith('// swift-tools-version: ' + policy['tools'] + '\n'), f'{name}: tools version'
         assert 'swiftLanguageModes: [.v6]' in manifest, f'{name}: Swift 6 mode'
-        assert 'platforms: [.iOS(.v26)]' in manifest, f'{name}: iOS 26 minimum'
+        assert 'platforms: [.iOS(.v26)' in manifest, f'{name}: iOS 26 minimum'
         paths = re.findall(r'\.package\(path: "([^"\n]+)"\)', manifest)
         assert sorted(paths) == sorted('../' + dep for dep in dependencies), f'{name}: dependency graph'
         assert manifest.count('.package(') == len(paths), f'{name}: unsupported package dependency declaration'
         products = re.findall(r'\.product\(name: "(\w+)", package: "(\w+)"\)', manifest)
-        assert sorted(products) == sorted((dep, dep) for dep in dependencies), f'{name}: target dependency products'
+        assert set(products) == {(dep, dep) for dep in dependencies}, f'{name}: target dependency products'
         sources = list((base / 'Sources' / name).rglob('*.swift'))
         assert sources, f'{name}: no source files'
         for relative in paths:
@@ -119,7 +126,8 @@ def check_packages(policy):
         for source in sources:
             code = re.sub(r'/\*.*?\*/|//[^\n]*', '', source.read_text(), flags=re.S)
             imports = set(re.findall(r'\bimport\s+(\w+)', code))
-            assert imports <= set(dependencies) | {'Foundation'}, f'{source}: prohibited import {imports}'
+            allowed = set(dependencies) | {'Foundation'} | set(policy.get('system_imports', {}).get(name, []))
+            assert imports <= allowed, f'{source}: prohibited import {imports}'
         tests = list((base / 'Tests').rglob('*.swift'))
         assert bool(tests) == (name in policy['test_packages']), f'{name}: tests differ from policy'
         assert all(not re.search(r'#expect\(\s*true\s*\)', p.read_text()) for p in tests), f'{name}: placeholder test'
@@ -162,8 +170,52 @@ def check_ui():
         re.search(r'\bimport\s+(SwiftUI|UIKit)|:\s*(?:some\s+)?View\b', p.read_text())
         for p in candidates)
     if has_ui:
-        raise Inconclusive('UI exists; rendered evidence and human approval need review before acceptance')
+        check_ui_evidence()
+        return
     print('NOT_APPLICABLE: no application target or UI implementation')
+
+
+def check_ui_evidence():
+    evidence_path = ROOT / '.ui-evidence.json'
+    if not evidence_path.exists():
+        raise Inconclusive('UI evidence and explicit human approval are required')
+    evidence = json.loads(evidence_path.read_text())
+    fingerprint = ui_source_fingerprint()
+    assert evidence.get('source_fingerprint') == fingerprint, 'UI evidence is stale for this source tree'
+    required = {'empty', 'entry', 'saving', 'processing', 'note', 'save_failure',
+                'load_failure', 'processing_failure', 'dark', 'large_type', 'high_contrast'}
+    surfaces = evidence.get('surfaces', {})
+    assert required <= surfaces.keys(), 'required rendered surfaces missing'
+    for surface in surfaces.values():
+        path = (ROOT / surface['path']).resolve()
+        assert path.is_relative_to(ROOT), 'UI evidence path escapes repository'
+        assert path.is_file(), f'missing rendered evidence: {path}'
+        assert path.suffix == '.png' and path.read_bytes().startswith(b'\x89PNG\r\n\x1a\n'), f'not a PNG screenshot: {path}'
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == surface['sha256'], f'changed screenshot: {path}'
+    checks = evidence.get('checks', {})
+    for check in ['ui_tests', 'accessibility_audits', 'contrast', 'dynamic_type']:
+        if checks.get(check) != 'PASS':
+            raise Inconclusive(f'UI verification incomplete: {check}')
+    approval = evidence.get('human_approval')
+    if not approval:
+        raise Inconclusive('HIGH-criticality UI awaits explicit human visual approval; rendered evidence is available')
+    assert approval.get('reviewer') and approval.get('decision') == 'approved', 'human approval missing identity or decision'
+    assert approval.get('source_fingerprint') == fingerprint, 'human approval belongs to a different source tree'
+    assert '**Status:** PASS' in (ROOT / 'UI-REVIEW.md').read_text(), 'human-readable UI review is not approved'
+    print('PASS: current UI evidence and recorded human approval')
+
+
+def ui_source_fingerprint():
+    included = set(inventory())
+    paths = [ROOT / 'DESIGN.md']
+    paths += list((ROOT / 'Packages').glob('*/Package.swift'))
+    paths += [path for path in (ROOT / 'App').rglob('*') if path.is_file()
+              and 'FlickUITests' not in path.parts and 'xcuserdata' not in path.parts]
+    paths += [path for source in (ROOT / 'Packages').glob('*/Sources')
+              for path in source.rglob('*') if path.is_file()]
+    entries = [str(path.relative_to(ROOT)) + '\0' + hashlib.sha256(path.read_bytes()).hexdigest()
+               for path in sorted(paths) if str(path.relative_to(ROOT)) in included]
+    return hashlib.sha256('\n'.join(entries).encode()).hexdigest()
 
 
 def inventory():

@@ -1,104 +1,102 @@
-# UI Review
+# UI Review — v0.1.0 candidate
 
 Schema Version: 1.2
 
-**Status:** NOT_APPLICABLE — v0.0.1 bootstrap candidate has no application UI
+**Status:** PASS — explicit owner visual approval recorded 2026-09-16
+
+The owner approved the supplied 18-image v0.1.0 candidate after the focused state
+revision. This supersedes the earlier NOT APPROVED YET disposition for this exact
+candidate. [Owner review](docs/verification/v0.1.0/VISUAL-APPROVAL.md).
+
+Approved source fingerprint:
+`42ddc9eafa76a54815d03b4a3849995a2dc528c8bba29b9091b9fae1e9975dae`
+
+The current fingerprint and all 18 PNGs match the existing evidence checksums.
+This records visual approval only; no commit, push, tag, or release is authorized.
 
 ## Scope
 
-- Base: v0.0.0
-- Head: uncommitted v0.0.1 bootstrap candidate
-- UI files changed: none
-- `DESIGN.md` changed: baseline contract only
-- Aesthetic Criticality: HIGH once application UI exists
+- Baseline: `f802005ad49e9b3074cbc2bc35d6212dedc2ade8`.
+- Candidate: uncommitted text kernel; `.ui-evidence.json` binds this review to the
+  current implementation/design fingerprint and exact screenshot hashes.
+- Aesthetic Criticality: HIGH.
+- Visual review performed by the agent: rendered-image inspection plus native
+  accessibility audits. This is not human approval.
+- Human Visual Approval: **APPROVED by the repository owner**, 2026-09-16.
 
-> Reset Status to `INCONCLUSIVE` when the first application UI change begins.
+## Rendered evidence
 
-## HIG Compliance Matrix
+[Complete gallery](docs/verification/v0.1.0/GALLERY.md) includes empty, entry,
+saving, durable pending, processing, Note, original capture, write/open/processing
+failure, Light/Dark, Increase Contrast, largest Dynamic Type, and landscape.
+Every image comes from the real simulator application. Timing pauses suspend
+real work at its boundary; failure cases use real read-only/invalid store
+configurations. No fake successful capture or mock feed is used.
 
-HIGH aesthetic criticality means the review covers visual quality AND
-whether the screen behaves like an iOS interface.
+Primary review images:
 
-### HIG: Layout
-- [ ] Safe-area aware
-- [ ] No device-specific fixed positioning
-- [ ] Adapts to available size
-- [ ] Content hierarchy remains clear
+- [Light feed](docs/verification/v0.1.0/ui/03-note-ready.png)
+- [Dark feed](docs/verification/v0.1.0/ui/10-dark-feed.png)
+- [Entry and primary action](docs/verification/v0.1.0/ui/02-text-entry.png)
+- [Error and retry](docs/verification/v0.1.0/ui/06-save-failure-retry.png)
+- [Largest text size](docs/verification/v0.1.0/ui/14-large-type-feed.png)
+- [Landscape](docs/verification/v0.1.0/ui/13-landscape.png)
 
-### HIG: Controls
-- [ ] Standard SwiftUI controls preferred
-- [ ] ≥44×44pt primary interaction regions
-- [ ] Visible pressed/selected/disabled states
-- [ ] Destructive actions clearly identified
+## HIG matrix — exercised local scope
 
-### HIG: Typography
-- [ ] System text styles
-- [ ] Dynamic Type supported
-- [ ] AX sizes do not truncate required content
-- [ ] Text remains readable at increased contrast
+- [x] Safe areas and portrait/landscape layout; required content remains scrollable.
+- [x] Native NavigationStack, List, TextField, buttons, swipe actions, and confirmation.
+- [x] Normal-size capture action uses a safe-area inset; accessibility sizes use an inline scrolling action.
+- [x] Primary action is at least 52 pt high; native hit-region audits pass.
+- [x] System text styles; capture and feed tested through accessibility XXXL.
+- [x] No clipped text in the exercised native audits; multi-line status/feedback wrap.
+- [x] Labels, values, traits, and descriptions checked through accessibility audits.
+- [x] Native hierarchy reviewed for reading order; snapshots are linked in the gallery.
+- [x] State is described in words, not color alone.
+- [x] Adaptive Light/Dark and Increase Contrast; actual dark pixels are asserted.
+- [x] Semantic color pairs tested from the actual token values; old failing pair is a negative control.
+- [x] Reduced Motion disables the only custom pressed scale; no custom looping/insertion animation exists.
+- [x] Save feedback follows explicit persistence; failed saves retain the draft.
+- [x] New draft text clears the prior capture's success; repeated binding writes do not erase feedback.
+- [x] Native navigation opens the Note and original capture; deletion requires confirmation.
+- [x] HIGH-criticality human visual approval for the fingerprint above.
 
-### HIG: Accessibility
-- [ ] VoiceOver labels, values, traits
-- [ ] Logical VoiceOver traversal
-- [ ] Reduced Motion respected
-- [ ] Information not conveyed by color alone
+## VoiceOver and keyboard review notes
 
-### HIG: Materials
-- [ ] Standard Liquid Glass behavior preserved
-- [ ] No unnecessary custom glass surfaces
-- [ ] Content remains visually dominant
+The captured native hierarchy exposes the navigation heading, composer heading,
+`Your note` text field with its actual value/placeholder, save feedback, feed
+heading, combined Note navigation buttons (text/date/status), and the adaptive
+capture button with its disabled trait where appropriate. The primary button's
+observed frame is 371×53 pt on the tested iPhone 17. A save announcement is posted
+only when the model receives the durable result; code does not move VoiceOver
+focus into the feed after saving.
 
-### HIG: Navigation
-- [ ] Native navigation patterns
-- [ ] Predictable back/dismiss behavior
-- [ ] Primary actions consistently placed
+UI automation exercised text entry, keyboard dismissal, primary actions, native
+back navigation, and deletion. A spoken VoiceOver session and a physical external
+keyboard were not exercised. The execution environment did not expose a
+Simulator.app GUI, though its CoreSimulator/XCTest backend rendered and tested
+the app. These notes describe structural/automated evidence,
+not an assertion that an audible or physical-device review occurred.
 
-### HIG: Flick-specific
-- [ ] Capture action remains immediately discoverable
-- [ ] Durable/pending/processing/error states understandable
-- [ ] No UI state claims persistence before durable write
+## Evidence limits and remaining gate
 
-## Required Checks
+The final application run uses iPhone 17 Simulator / iOS 26.5 (23F77), built with
+Xcode 27.0 / Swift 6.4. Native audits cover contrast, hit regions, descriptions,
+traits, and clipping on the tested states. Separate tests exercise the largest
+Dynamic Type size and landscape. Physical device/provisioning and the new
+candidate's hosted CI remain unverified.
 
-- [ ] `DESIGN.md` covers the change.
-- [ ] Aesthetic Intent, Tension, Anti-reference, and Visual Signature were reviewed.
-- [ ] Active references remain within the documented reference budget.
-- [ ] The rendered UI follows one coherent visual grammar rather than mixing reference systems.
-- [ ] Visual hierarchy identifies a dominant region and primary action/reading path.
-- [ ] Color emphasis matches the documented palette intent and accent role.
-- [ ] Existing shared primitives were reused where applicable.
-- [ ] Loading / Empty / Error / Success states are handled where applicable.
-- [ ] Defined responsive targets were validated.
-- [ ] Keyboard path and visible focus were validated.
-- [ ] WCAG 2.2 AA contrast target was validated.
-- [ ] Reduced-motion behavior was validated where motion exists.
-- [ ] Supported theme variants were validated.
-- [ ] Performance budget was checked where applicable.
-- [ ] No unintended overflow, token drift, or duplicated primitives were observed.
-- [ ] Rendered visual evidence was reviewed.
-- [ ] Anti-reference / generic AI-template drift was checked.
+Hosted CI against the exact authorized candidate SHA remains INCONCLUSIVE. Static
+inspection confirms `.github/workflows/packages.yml` calls `scripts/test-ios.sh`,
+which runs the enabled FlickUITests target without test filters. Execution is
+still required. If hosted CI does not execute the complete final suite, a final
+12/12 aggregate run is required before release acceptance.
 
-## Visual Review
+## Nonblocking follow-ups from the owner
 
-- Visual Reviewer: NOT_APPLICABLE — no UI
-- Human Visual Approval: NOT_APPLICABLE — no UI
-<!-- LOW may use AGENT for Visual Reviewer. MEDIUM requires an identified reviewer. HIGH requires explicit Human Visual Approval identity. -->
+- Before production, consider privacy-marking or hashing long-lived object IDs
+  currently emitted as public, sanitized OSLog data.
+- Later polish: remove or clarify the repeated `Note` detail section heading.
+- Physical-device review: check both initial and scrolled landscape positions.
 
-## Evidence
-
-NOT_APPLICABLE — CEUI contains imports only; no rendered application exists.
-<!-- Link or identify screenshots, recordings, visual-regression artifacts, or local render evidence. -->
-
-## Exception
-
-Use only when Status is `EXCEPTION`.
-
-- Invariant: N/A
-- Scope: N/A
-- Justification: N/A
-- Risk: N/A
-- Mitigation: N/A
-- Follow-up: N/A
-- Expiry: N/A
-- Owner: N/A
-- Approver: N/A
+These are deferred follow-ups, not v0.1.0 visual blockers. No exception is requested.

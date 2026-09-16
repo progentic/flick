@@ -1,80 +1,42 @@
-# Flick
+<h1 align="center">Flick</h1>
+<p align="center"><strong>Your thoughts, saved.</strong></p>
+<p align="center">An omni-clipboard and pocket scratchpad for iOS.</p>
 
-**Flick — your thoughts, saved.**
+<p align="center">
+  <a href="docs/DEVELOPMENT.md"><img src="https://img.shields.io/badge/Swift-6-F05138?style=for-the-badge&amp;logo=swift&amp;logoColor=white" alt="Swift 6"></a>
+  <a href="docs/USER_GUIDE.md"><img src="https://img.shields.io/badge/iOS-26%2B-161310?style=for-the-badge&amp;logo=apple&amp;logoColor=white" alt="iOS 26 and later"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/FOSS-Free_%26_Open_Source-A43212?style=for-the-badge" alt="Free and open source software"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-BSD_3--Clause-595147?style=for-the-badge" alt="BSD 3-Clause license"></a>
+</p>
 
-Flick is an iPhone-first capture app concept: text, voice, screenshots/images,
-and supported system entry points become durable local captures that can later
-be organized into notes, tasks, and calendar-event drafts without requiring the
-user to maintain folders, tags, or a manual inbox taxonomy.
+<p align="center">
+  <a href="docs/USER_GUIDE.md">User guide</a> ·
+  <a href="docs/verification/v0.1.0/GALLERY.md">See Flick</a> ·
+  <a href="docs/DEVELOPMENT.md">Developer guide</a>
+</p>
 
-## Repository state: v0.0.0
+## A place for the things you want to keep
 
-`v0.0.0` is the conceptual pre-bootstrap state. The working tree now contains
-a `v0.0.1` bootstrap candidate; it is not yet committed or tagged.
+An idea on the train. A line worth remembering. A bit of text copied from
+somewhere else. Flick gives those loose pieces a home before you lose them.
 
-At this state:
+Type or paste a thought, tap **Save Note**, and get back to your day. No title
+to invent. No folder to choose. Just a simple place to put something down and
+find it again.
 
-- no application implementation is accepted as authoritative;
-- no Xcode app target is claimed to exist;
-- the eight-package scaffold is evaluated by fresh bootstrap checks below;
-- no CI run is proof of a baseline;
-- ADRs are proposals, not accepted implementation facts;
-- UI documents define intent only; no UI has been approved;
-- historical or partial exported source may be preserved for review, but it is
-  not automatically an implementation baseline. Reviewed domain code is reused;
-  old pipeline behavior is quarantined under `docs/history/`.
+## Less sorting. More living.
 
-The first repository milestone is `v0.0.1`, which establishes the documented
-governance, package scaffold, CI, and review baseline. The first functional app
-milestone is `v0.1.0`.
+- **Catch a thought quickly.** Keep a sentence, a rough idea, or a longer note.
+- **Come back when you're ready.** Browse your notes in time order and open one
+  to read the full text.
+- **Keep it close.** Your notes stay on your device, with no account needed.
+- **Make it comfortable.** Light and dark appearances and larger text help
+  Flick fit the way you read.
 
-See:
+## Explore Flick
 
-- `docs/REPOSITORY_STATE.md`
-- `docs/ROADMAP.md`
-- `docs/ARCHITECTURE.md`
-- `DESIGN.md`
-- `SECURITY.md`
-- `TASK_PROMPT-v0.0.0-to-v0.0.1.md`
+[Using Flick](docs/USER_GUIDE.md) · [For developers](docs/DEVELOPMENT.md) ·
+[All documentation](docs/README.md) · [Project status](docs/REPOSITORY_STATE.md) ·
+[Roadmap](docs/ROADMAP.md) · [Changelog](CHANGELOG.md)
 
-## Target platform contract
-
-These are **target requirements**, not build claims for `v0.0.0`:
-
-- iOS 26+ deployment target
-- Swift 6 language mode
-- Swift tools 6.3 package manifests
-- SwiftUI-first native interface
-- Apple HIG as the governing platform design language
-- local/on-device processing for the MVP semantic path
-
-The actual developer toolchain may be newer than these minimum language/package
-requirements. The `v0.0.1` bootstrap must record and validate the toolchain used.
-
-## Bootstrap validation
-
-```sh
-bash scripts/repo-enforce.sh --base origin/main
-bash scripts/ui-enforce.sh --base origin/main
-python3 -m unittest discover -s scripts/tests -v
-bash scripts/validate-packages.sh
-git diff --check
-```
-
-Portable governance requires Git and Python 3. Package validation requires
-macOS and a compatible Swift/Xcode installation. Regenerate checkout inventory
-after intentional file changes with `bash scripts/repo-enforce.sh --inventory-write`.
-Current evidence and remaining external actions: `docs/verification/bootstrap-v0.0.1.md`.
-
-## Native design objective
-
-Flick should look, move, adapt, and behave like a first-party iOS application
-while retaining a distinct Flick identity.
-
-Mail and Notes are interaction references for content hierarchy, navigation,
-toolbar behavior, accessibility, and platform fluency. They are not templates
-to clone.
-
-## License
-
-BSD 3-Clause. Copyright holder: **Proto**.
+Free and open source under the [BSD 3-Clause license](LICENSE). Made by Proto.

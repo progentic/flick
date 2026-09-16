@@ -1,7 +1,7 @@
 # FlickDomain — first implementation slice
 
 Status: domain code retained for the bootstrap, subject to fresh validation.
-See the current bootstrap evidence in `docs/verification/bootstrap-v0.0.1.md`
+See the current application evidence in `docs/verification/v0.1.0/RESULTS.md`
 at the repository root. The September 15 record is historical, not proof of
 the current checkout.
 
@@ -10,7 +10,8 @@ the current checkout.
 One Foundation-only Swift library and its unit tests. The existing domain
 implementation is retained where it satisfies the agreed contracts; this is not
 a reconstruction of the historical package layout. Other files under `Packages/`
-are now normalized bootstrap scaffolds, not dependencies of FlickDomain.
+consume domain values but are not dependencies of FlickDomain. The v0.1.0
+feed projection and text-state transition contract remain Foundation-only.
 Historical architecture documents and review reports are not a defect baseline
 or verification evidence for this slice.
 
@@ -79,6 +80,5 @@ delivery are outside this slice. There are no persistence adapters or delivery
 test doubles in this package. Existing supporting data types remain preserved;
 their presence does not implement any of those services.
 
-Next bounded step: complete repository bootstrap gates before beginning the
-0.1.0 application kernel. [VERIFICATION.md](VERIFICATION.md) retains historical
+Next bounded step: complete the current v0.1.0 review gates. [VERIFICATION.md](VERIFICATION.md) retains historical
 domain-only results; current bootstrap evidence lives under `docs/verification/`.

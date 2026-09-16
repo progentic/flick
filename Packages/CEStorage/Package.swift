@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "CEStorage",
-    platforms: [.iOS(.v26)],
+    platforms: [.iOS(.v26), .macOS(.v14)],
     products: [.library(name: "CEStorage", targets: ["CEStorage"])],
     dependencies: [
         .package(path: "../FlickDomain")
@@ -14,7 +14,8 @@ let package = Package(
             dependencies: [
                 .product(name: "FlickDomain", package: "FlickDomain")
             ]
-        )
+        ),
+        .testTarget(name: "CEStorageTests", dependencies: ["CEStorage", .product(name: "FlickDomain", package: "FlickDomain")])
     ],
     swiftLanguageModes: [.v6]
 )

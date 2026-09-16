@@ -33,7 +33,7 @@ def main():
         if (ROOT / policy['app_project']).exists():
             run(['xcodebuild', '-project', policy['app_project'], '-scheme', policy['app_scheme'],
                  '-sdk', 'iphonesimulator', '-destination', 'generic/platform=iOS Simulator',
-                 '-derivedDataPath', str(output / 'app'), 'CODE_SIGNING_ALLOWED=NO', 'build'], output / 'app.log')
+                 '-derivedDataPath', str(output / 'app'), 'CODE_SIGN_IDENTITY=-', 'CODE_SIGNING_ALLOWED=YES', 'build'], output / 'app.log')
             print('PASS: app build')
         else:
             print('NOT_APPLICABLE: App/Flick.xcodeproj does not exist')

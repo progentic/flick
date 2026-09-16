@@ -1,0 +1,186 @@
+{
+  "source": "App-owned OSLog records from state-revision iOS 26.5 native tests, 2026-09-16",
+  "privacy_check": "PASS: known failure fixture bodies and user/container paths absent from all app-owned event messages",
+  "scope": "Real read-only save/claim failures and invalid store-open configuration. Framework logs excluded. Attempt counters are instance/request scoped, not durable.",
+  "events": [
+    {
+      "attempt": 1,
+      "attempt_scope": "open_invocation",
+      "category": "storage",
+      "causes": [
+        {
+          "error_code": 1,
+          "error_domain": "SwiftData.SwiftDataError",
+          "error_type": "SwiftData.SwiftDataError",
+          "reason": "inspect_error_type_and_code"
+        }
+      ],
+      "duration_ms": 29.633875,
+      "operation": "open_store",
+      "recovery": "retry_open_no_reset",
+      "stage": "container_initialization",
+      "store_mode": "read_write"
+    },
+    {
+      "attempt": 1,
+      "attempt_scope": "application_session",
+      "category": "application",
+      "causes": [
+        {
+          "error_code": 1,
+          "error_domain": "SwiftData.SwiftDataError",
+          "error_type": "SwiftData.SwiftDataError",
+          "reason": "inspect_error_type_and_code"
+        }
+      ],
+      "duration_ms": 82.950208,
+      "operation": "open_notes",
+      "recovery": "retry_open_no_reset",
+      "stage": "composition"
+    },
+    {
+      "attempt": 1,
+      "attempt_scope": "store_instance",
+      "capture_id": "E1994CC1-C706-434A-90DF-52C99908E1F4",
+      "category": "storage",
+      "causes": [
+        {
+          "error_code": 513,
+          "error_domain": "NSCocoaErrorDomain",
+          "error_type": "NSError",
+          "reason": "write_permission_denied"
+        }
+      ],
+      "duration_ms": 24.331583,
+      "expected_state": "pending",
+      "operation": "save_capture",
+      "recovery": "retry_available",
+      "stage": "durable_write",
+      "state": "pending",
+      "store_mode": "read_only"
+    },
+    {
+      "attempt": 1,
+      "attempt_scope": "capture_request",
+      "capture_id": "E1994CC1-C706-434A-90DF-52C99908E1F4",
+      "category": "capture",
+      "causes": [
+        {
+          "error_code": 513,
+          "error_domain": "NSCocoaErrorDomain",
+          "error_type": "NSError",
+          "reason": "write_permission_denied"
+        }
+      ],
+      "duration_ms": 30.970459,
+      "operation": "save_capture",
+      "recovery": "retry_available_draft_retained",
+      "stage": "durable_write",
+      "state": "pending"
+    },
+    {
+      "attempt": 1,
+      "attempt_scope": "store_instance",
+      "capture_id": "2DF04EBB-7F38-4E9F-A82A-E3BF415ABF38",
+      "category": "storage",
+      "causes": [
+        {
+          "error_code": 513,
+          "error_domain": "NSCocoaErrorDomain",
+          "error_type": "NSError",
+          "reason": "write_permission_denied"
+        }
+      ],
+      "duration_ms": 1.6325,
+      "expected_state": "pending",
+      "operation": "save_capture",
+      "recovery": "retry_available",
+      "stage": "durable_write",
+      "state": "pending",
+      "store_mode": "read_only"
+    },
+    {
+      "attempt": 1,
+      "attempt_scope": "capture_request",
+      "capture_id": "2DF04EBB-7F38-4E9F-A82A-E3BF415ABF38",
+      "category": "capture",
+      "causes": [
+        {
+          "error_code": 513,
+          "error_domain": "NSCocoaErrorDomain",
+          "error_type": "NSError",
+          "reason": "write_permission_denied"
+        }
+      ],
+      "duration_ms": 1.787917,
+      "operation": "save_capture",
+      "recovery": "retry_available_draft_retained",
+      "stage": "durable_write",
+      "state": "pending"
+    },
+    {
+      "attempt": 1,
+      "attempt_scope": "store_instance",
+      "capture_id": "434C6469-EAB1-42F7-A9F3-1E2A94F998A4",
+      "category": "storage",
+      "causes": [
+        {
+          "error_code": 513,
+          "error_domain": "NSCocoaErrorDomain",
+          "error_type": "NSError",
+          "reason": "write_permission_denied"
+        }
+      ],
+      "duration_ms": 10.634167,
+      "expected_state": "pending",
+      "operation": "claim_capture",
+      "recovery": "requeue_on_next_run",
+      "stage": "claim",
+      "state": "processing",
+      "store_mode": "read_only"
+    },
+    {
+      "attempt": 2,
+      "attempt_scope": "store_instance",
+      "capture_id": "434C6469-EAB1-42F7-A9F3-1E2A94F998A4",
+      "category": "storage",
+      "causes": [
+        {
+          "error_code": 513,
+          "error_domain": "NSCocoaErrorDomain",
+          "error_type": "NSError",
+          "reason": "write_permission_denied"
+        }
+      ],
+      "duration_ms": 0.806417,
+      "expected_state": "pending",
+      "operation": "claim_capture",
+      "recovery": "requeue_on_next_run",
+      "stage": "claim",
+      "state": "processing",
+      "store_mode": "read_only"
+    },
+    {
+      "attempt": 3,
+      "attempt_scope": "store_instance",
+      "capture_id": "434C6469-EAB1-42F7-A9F3-1E2A94F998A4",
+      "category": "storage",
+      "causes": [
+        {
+          "error_code": 513,
+          "error_domain": "NSCocoaErrorDomain",
+          "error_type": "NSError",
+          "reason": "write_permission_denied"
+        }
+      ],
+      "duration_ms": 13.065084,
+      "expected_state": "pending",
+      "operation": "claim_capture",
+      "recovery": "requeue_on_next_run",
+      "stage": "claim",
+      "state": "processing",
+      "store_mode": "read_only"
+    }
+  ],
+  "state_semantics": "Storage state is the actor-context snapshot after the error and may include in-flight mutations; expected_state is the operation precondition. These records are not a committed-disk-state assertion."
+}

@@ -149,67 +149,40 @@ cards-within-cards.
 
 ## 3. Tokens
 
-### Color
+### Color — implemented v0.1.0 tokens
 
-> Ember/paper/ink concept APPROVED (Ian, 2026-09-10). Hex values below are NOT
-> final: the current values contradict the document's own WCAG 2.2 AA target
-> and MUST be reworked before UI implementation —
-> `text-muted` #A9A195 is ≈ 2.56:1 against white (needs 4.5:1 for text);
-> white on `action-primary` #E4572E is ≈ 3.68:1 (needs 4.5:1 for text, 3:1 for
-> large-scale/UI components — fails text use);
-> white on the dark-theme ember #FF6B3D is ≈ 2.83:1 (fails even the 3:1
-> non-text minimum).
-> Open item: re-derive the ramp so every text/background pair meets 4.5:1
-> (3:1 for large text and UI components), then record the final values here.
+The ember/paper/ink concept remains approved. The following adaptive sRGB values
+replace the failing draft ramps. Code authority is `FlickColorTokens.swift` in
+CEUI; unit tests calculate WCAG contrast from those actual values. Human visual
+approval of the rendered candidate is still required.
 
-```text
-canvas:            #FAFAF8  (warm paper white)
-surface:           #FFFFFF
-surface-elevated:  #F1EFEA  (feed row press / sheets)
-text-primary:      #161310  (ink)
-text-secondary:    #6E675C
-text-muted:        #A9A195  (NOT FINAL — fails AA, see note above)
-border:           #E5E1D8
-action-primary:    #E4572E  (ember — capture button + primary actions only; NOT FINAL for text-on-ember use)
-action-foreground: (REQUIRED TOKEN — explicit foreground color for content on
-                   action-primary, e.g. the capture control glyph/label.
-                   MUST pair with action-primary at 4.5:1; MUST be an adaptive
-                   asset color, never an assumed constant.)
-focus:            #E4572E  (matches action; always paired with visible outline, never color alone)
-success:          #2E7D4F
-warning:          #B7791F
-danger:           #C93A2E
-information:      #2F6FED
-brand-accent:     #E4572E
-```
+| Token | Light | Dark | Increased contrast, light | Increased contrast, dark |
+|---|---|---|---|---|
+| canvas | #FAFAF8 | #161310 | #FAFAF8 | #161310 |
+| ink | #161310 | #F4F1EA | #161310 | #F4F1EA |
+| secondary / placeholder | #595147 | #D2C9BB | #595147 | #D2C9BB |
+| action-primary (ember) | #A43212 | #FF9B78 | #912B0D | #FF9B78 |
+| action-foreground | #FFFFFF | #161310 | #FFFFFF | #161310 |
+| outline | #706559 | #B6AA99 | #595147 | #B6AA99 |
 
-**Adaptive color rule:** Foreground/background pairs MUST be adaptive asset
-colors (light/dark/high-contrast variants) or system colors. NEVER assume white
-(or any fixed) foreground content on a tinted background — every pairing MUST
-be verified at 4.5:1 (text) or 3:1 (large text, UI components, graphical
-objects) in all three themes.
+Standard text/background pairs exceed 4.5:1; increased-contrast text pairs
+exceed 7:1. Input/action boundaries exceed 3:1. The light secondary/canvas pair
+is 7.46:1; white/light ember is 6.90:1; dark ink/canvas is 16.41:1;
+dark action-foreground/ember is 9.00:1. Exact computed values and native audit
+results are in the current v0.1.0 verification record.
 
-**Palette intent:** Quiet paper-and-ink surfaces so the feed recedes; visual
-emphasis is spent in exactly one place — the ember capture button and its
-recording state. Large surfaces stay low-chroma; the accent appears only where
-action happens.
+Disabled capture uses secondary text on canvas with an outline, not reduced
+opacity. Saving uses a progress indicator and the active action colors.
+Status is conveyed in words and, where useful, a system symbol; never color
+alone. Destructive confirmation uses the native destructive role.
 
-**Accent role:** Capture and primary confirmation. The ember color MUST NOT be
-used for decoration, illustration, or secondary chrome.
+Palette selection follows the system color scheme and Increase Contrast trait.
+The primary action uses a native Button with explicit adaptive foreground and
+background pairing. Its custom style preserves contrast when disabled and
+suppresses its small pressed scale when Reduce Motion is enabled.
 
-**Semantic vs decorative color rule:** Semantic colors (success/warning/danger/
-information) are reserved for status and MUST NOT be repurposed decoratively.
-Status is never conveyed by color alone — always paired with label/icon.
-
-### Themes
-
-```text
-light:         tokens above (after the AA rework — current hexes are placeholders)
-dark:          canvas #131110, surface #1C1915, ink #F4F1EA, ember ramp re-derived
-               for the dark theme (the draft #FF6B3D fails AA, see note above)
-high-contrast: system high-contrast mappings; every pair verified at 7:1 where
-               enhanced contrast applies
-```
+Accent is spent on the capture action and contextual native actions. Large
+surfaces remain quiet. Future voice/task/event color semantics are deferred.
 
 ### Typography
 
@@ -303,18 +276,31 @@ components only where the signature demands it (capture button, waveform).
 
 | State | Visual / Behavior Contract |
 |---|---|
-| Loading | Feed item shows indeterminate shimmer on its derived/processing region while processing runs; capture button never blocks |
-| Empty | First-run: capture button + "Tap to capture your first thought." No dead illustration |
-| Error | Durable-write failure: surfaced on the capture screen itself (banner/alert with retry) — NEVER as an inline retry on a feed row, because a failed write means no persisted feed item exists. Retry re-attempts the durable write from the recoverable capture source; for the 0.1.0 text path this is the in-memory text payload. Semantic routing remains unresolved after fallback → item lands in Unsorted, never lost (a Foundation Models failure may simply fall back successfully) |
-| Success | Capture: brief ember flash on the button + item appears at feed top. <300ms perceived |
-| Disabled | While recording, the capture action transitions to a Stop control — it is not called disabled |
-| Warning | Low RoutingScore → Unsorted badge with one-tap resolver |
-| Danger | Delete capture/output: system confirmation; destructive action in `danger` token |
-| Information | Source badges (voice/screenshot/text), "processed on-device" footnote in settings |
+| Empty | `Save Note`, disabled outline; neutral editor; no status copy |
+| Editing | `Save Note`, ember filled action and focused editor border |
+| Saving | `Saving…` and spinner; editor locked; no redundant page status |
+| Saved | `Saved` and checkmark for two seconds after explicit persistence, then neutral; a new draft clears prior feedback |
+| Save failed | `Try again`; error border/icon; "Couldn't save note. Your text is still here." The draft remains in memory, not durably saved |
+| Saved, processing | Normal capture action; affected feed row owns spinner and "Saved · Finishing note…" |
+| Processing failed | Normal capture action; affected row owns warning/tint, "Saved · Note not ready", and inline `Retry` |
+| Store unavailable | Capture disabled; `Try again`; "Couldn't open notes." |
+| Delete | Native destructive confirmation; failure says "Couldn't delete note." |
+
+At accessibility Dynamic Type sizes, remove the marketing headline, use an
+expanding editor, and put the single-line `Save` action inside the scrolling
+composer. Do not retain the bottom action inset at those sizes. Normal sizes
+retain the safe-area action. While editing, native navigation-toolbar `Done`
+dismisses the keyboard without overlaying the capture action. Navigation uses native NavigationStack back behavior.
+
+Semantic error ink is #9D2020 on light surfaces and #FFB4AB on dark surfaces;
+error surface is #FFF1EF / #321B19. An icon and words accompany error color.
+These presentation states do not replace persisted capture status. Processing
+retry requeues only persisted failed captures; pending/interrupted work resumes
+through the kernel's recovery path.
 
 ### Motion
 
-**Allowed:** Capture-button press scale; ember flash on successful write; waveform
+**Allowed:** Capture-button press scale (disabled under Reduce Motion); waveform
 animation during recording; item insertion transition in feed.
 
 **Forbidden:** Decorative spring animations, looping ambient motion, parallax,
@@ -329,7 +315,7 @@ cross-fade or instant swap; waveform becomes a static level meter.
 
 - WCAG target: 2.2 AA (contrast, names, focus).
 - Keyboard requirements: hardware-keyboard entry, submit/dismiss behavior, and visible focus are tested — 0.1.0 ships a text-entry surface. Full VoiceOver rotor/label coverage alongside.
-- Focus behavior: on successful capture, prefer an accessibility announcement ("Thought saved") and preserve the user's capture context — Flick is a rapid-capture app and stealing focus after every capture harms consecutive captures. Move VoiceOver focus only when the interaction actually changes screens/context.
+- Focus behavior: on successful capture, prefer an accessibility announcement ("Saved") and preserve the user's capture context — Flick is a rapid-capture app and stealing focus after every capture harms consecutive captures. Move VoiceOver focus only when the interaction actually changes screens/context.
 
 ### Responsive
 
@@ -351,7 +337,7 @@ cross-fade or instant swap; waveform becomes a static level meter.
 ### Content / i18n
 
 - Text expansion: layouts tolerate +40% string growth.
-- Locale formatting: system formatters for dates/numbers; ISO8601 only in storage.
+- Locale formatting: system formatters for dates/numbers; Schema V1 stores typed Date values, never locale-formatted strings.
 - RTL support: validate when localization ships (post-MVP).
 
 ### Visual Review

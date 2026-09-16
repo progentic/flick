@@ -1,0 +1,75 @@
+{
+  "context": {
+    "hardware": "Apple M4 Max",
+    "host_os": "macOS 27.0",
+    "device": "iPhone 17 Simulator",
+    "runtime": "iOS 26.5 (23F77)",
+    "toolchain": "Xcode 27.0 (27A266a), Apple Swift 6.4",
+    "interval": "CaptureCoordinator entry through explicit successful persistence, excluding text entry and app launch",
+    "slo_target_ms": 300
+  },
+  "recent_launch_first_capture": {
+    "count": 9,
+    "min_ms": 15.969333,
+    "median_ms": 17.825667,
+    "max_ms": 21.167916
+  },
+  "warm_same_process": {
+    "count": 1,
+    "min_ms": 1.878167,
+    "median_ms": 1.878167,
+    "max_ms": 1.878167
+  },
+  "samples": [
+    {
+      "timestamp": "2026-09-16T09:29:43.809478-04:00",
+      "process_id": 36338,
+      "duration_ms": 15.969333
+    },
+    {
+      "timestamp": "2026-09-16T09:30:09.279289-04:00",
+      "process_id": 36399,
+      "duration_ms": 19.038166
+    },
+    {
+      "timestamp": "2026-09-16T09:30:19.828160-04:00",
+      "process_id": 36409,
+      "duration_ms": 17.883125
+    },
+    {
+      "timestamp": "2026-09-16T09:30:30.794099-04:00",
+      "process_id": 36419,
+      "duration_ms": 17.104084
+    },
+    {
+      "timestamp": "2026-09-16T09:31:09.364865-04:00",
+      "process_id": 36444,
+      "duration_ms": 21.167916
+    },
+    {
+      "timestamp": "2026-09-16T09:31:13.895486-04:00",
+      "process_id": 36444,
+      "duration_ms": 1.878167
+    },
+    {
+      "timestamp": "2026-09-16T09:31:28.093652-04:00",
+      "process_id": 36465,
+      "duration_ms": 16.588417
+    },
+    {
+      "timestamp": "2026-09-16T09:31:42.580274-04:00",
+      "process_id": 36489,
+      "duration_ms": 20.02325
+    },
+    {
+      "timestamp": "2026-09-16T09:32:01.794945-04:00",
+      "process_id": 36504,
+      "duration_ms": 17.825667
+    },
+    {
+      "timestamp": "2026-09-16T09:32:18.094359-04:00",
+      "process_id": 36515,
+      "duration_ms": 17.306542
+    }
+  ]
+}

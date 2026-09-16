@@ -1,5 +1,6 @@
 """Negative controls run in disposable repositories, never the Flick Git index."""
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -99,10 +100,45 @@ class GovernanceTests(unittest.TestCase):
             governance.check_inventory()
 
     def test_no_ui_is_not_applicable_but_new_ui_needs_evidence(self):
+        shutil.rmtree(self.root / 'App', ignore_errors=True)
+        shutil.rmtree(self.root / 'Packages/CEUI/Sources/CEUI')
+        source = self.root / 'Packages/CEUI/Sources/CEUI'
+        source.mkdir(parents=True)
+        (source / 'Module.swift').write_text('import FlickDomain\n')
+        (self.root / '.ui-evidence.json').unlink(missing_ok=True)
         governance.check_ui()
         (self.root / 'Packages/CEUI/Sources/CEUI/Module.swift').write_text('import SwiftUI\n')
         with self.assertRaises(governance.Inconclusive):
             governance.check_ui()
+
+    def test_ui_rejects_stale_source_evidence(self):
+        (self.root / '.ui-evidence.json').write_text(json.dumps({'source_fingerprint': 'outdated'}))
+        with self.assertRaises(AssertionError):
+            governance.check_ui_evidence()
+
+    def test_rendered_evidence_cannot_replace_human_approval(self):
+        self.write_ui_fixture()
+        with self.assertRaisesRegex(governance.Inconclusive, 'human visual approval'):
+            governance.check_ui_evidence()
+
+    def test_changed_screenshot_fails_even_with_current_source(self):
+        self.write_ui_fixture()
+        image = self.root / 'docs/verification/v0.1.0/ui/01-empty-light.png'
+        image.write_bytes(image.read_bytes() + b'changed')
+        with self.assertRaises(AssertionError):
+            governance.check_ui_evidence()
+
+    def write_ui_fixture(self):
+        image = 'docs/verification/v0.1.0/ui/01-empty-light.png'
+        surface = {'path': image, 'sha256': hashlib.sha256((self.root / image).read_bytes()).hexdigest()}
+        evidence = {
+            'source_fingerprint': governance.ui_source_fingerprint(),
+            'surfaces': {name: surface for name in ['empty', 'entry', 'saving', 'processing', 'note',
+                        'save_failure', 'load_failure', 'processing_failure', 'dark', 'large_type', 'high_contrast']},
+            'checks': {name: 'PASS' for name in ['ui_tests', 'accessibility_audits', 'contrast', 'dynamic_type']},
+            'human_approval': None,
+        }
+        (self.root / '.ui-evidence.json').write_text(json.dumps(evidence))
 
     def git(self, *arguments):
         return subprocess.run(['git', *arguments], cwd=self.root, check=True,

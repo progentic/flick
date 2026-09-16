@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "CECapture",
-    platforms: [.iOS(.v26)],
+    platforms: [.iOS(.v26), .macOS(.v14)],
     products: [.library(name: "CECapture", targets: ["CECapture"])],
     dependencies: [
         .package(path: "../FlickDomain")
@@ -14,7 +14,8 @@ let package = Package(
             dependencies: [
                 .product(name: "FlickDomain", package: "FlickDomain")
             ]
-        )
+        ),
+        .testTarget(name: "CECaptureTests", dependencies: ["CECapture"])
     ],
     swiftLanguageModes: [.v6]
 )

@@ -22,3 +22,5 @@ jobs:
         run: bash scripts/repo-enforce.sh
       - name: Resolve, build, and test packages; build app when present
         run: bash scripts/validate-packages.sh
+      - name: iOS application and recovery UI tests
+        run: bash scripts/test-ios.sh

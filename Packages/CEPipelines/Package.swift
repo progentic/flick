@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "CEPipelines",
-    platforms: [.iOS(.v26)],
+    platforms: [.iOS(.v26), .macOS(.v14)],
     products: [.library(name: "CEPipelines", targets: ["CEPipelines"])],
     dependencies: [
         .package(path: "../FlickDomain"),
@@ -22,7 +22,8 @@ let package = Package(
                 .product(name: "CEStorage", package: "CEStorage"),
                 .product(name: "CEOutput", package: "CEOutput")
             ]
-        )
+        ),
+        .testTarget(name: "CEPipelinesTests", dependencies: ["CEPipelines"])
     ],
     swiftLanguageModes: [.v6]
 )

@@ -14,7 +14,8 @@ let package = Package(
             dependencies: [
                 .product(name: "FlickDomain", package: "FlickDomain")
             ]
-        )
+        ),
+        .testTarget(name: "CEIngestionTests", dependencies: ["CEIngestion"])
     ],
     swiftLanguageModes: [.v6]
 )

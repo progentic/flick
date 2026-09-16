@@ -1,0 +1,85 @@
+Attributes: Application, 0x113f74a00, pid: 57225, label: 'Flick'
+Element subtree:
+ →Application, 0x113f74a00, pid: 57225, label: 'Flick'
+    Window (Main), 0x113f76e40, {{0.0, 0.0}, {874.0, 402.0}}
+      Other, 0x113f752c0, {{0.0, 0.0}, {874.0, 402.0}}
+        Other, 0x113f748c0, {{0.0, 0.0}, {874.0, 402.0}}
+          Other, 0x113f75540, {{0.0, 0.0}, {874.0, 402.0}}
+            Other, 0x113f75180, {{0.0, 0.0}, {874.0, 402.0}}
+              Other, 0x113f75680, {{0.0, 0.0}, {874.0, 402.0}}
+                NavigationBar, 0x113f761c0, {{0.0, 24.0}, {874.0, 54.0}}, identifier: 'Flick'
+                  StaticText, 0x113f75400, {{418.3, 35.7}, {37.0, 20.7}}, label: 'Flick'
+                Other, 0x113f76300, {{0.0, 0.0}, {874.0, 402.0}}
+                  Other, 0x113f76bc0, {{0.0, 0.0}, {874.0, 402.0}}
+                    Other, 0x113f76940, {{0.0, 0.0}, {874.0, 402.0}}
+                      Other, 0x113f76a80, {{0.0, 0.0}, {874.0, 402.0}}
+                        CollectionView, 0x113f76580, {{0.0, 0.0}, {874.0, 402.0}}
+                          Other, 0x113f757c0, {{0.0, -880.0}, {874.0, 1004.7}}
+                          Cell, 0x113f76440, {{0.0, -76.0}, {874.0, 200.7}}
+                            Other, 0x113f74780, {{0.0, -76.0}, {874.0, 200.7}}
+                              Other, 0x113f74000, {{0.0, -76.0}, {874.0, 200.7}}
+                                Other, 0x113f74500, {{0.0, -76.0}, {874.0, 200.7}}
+                            Other, 0x113f77480, {{62.0, -76.0}, {750.0, 200.7}}
+                              Other, 0x113f77e80, {{62.0, -76.0}, {750.0, 200.7}}
+                                Other, 0x113f77d40, {{62.0, -76.0}, {750.0, 200.7}}
+                                  StaticText, 0x113f74b40, {{78.0, -45.0}, {252.0, 26.3}}, label: 'A thought worth keeping.'
+                                  TextField, 0x113f743c0, {{94.0, 13.3}, {686.0, 64.3}}, identifier: 'thoughtInput', label: 'Your note', placeholderValue: 'What's on your mind?'
+                                    Other, 0x113f775c0, {{94.0, 13.3}, {0.0, 0.0}}, identifier: '_UITextSelectionRangeAdjustmentContainerView'
+                                      Other, 0x113f770c0, {{94.0, 13.3}, {0.0, 0.0}}, identifier: 'com.apple.text.grabber.leading'
+                                        Other, 0x113f77840, {{86.8, -0.2}, {16.5, 16.5}}
+                                        Other, 0x113f77c00, {{94.0, 13.3}, {2.0, 0.0}}
+                                      Other, 0x113f75cc0, {{94.0, 13.3}, {0.0, 0.0}}, identifier: 'com.apple.text.grabber.leading'
+                                        Other, 0x113f75040, {{86.8, -0.2}, {16.5, 16.5}}
+                                        Other, 0x113f74f00, {{94.0, 13.3}, {2.0, 0.0}}
+                                    Other, 0x113f75900, {{94.0, 44.7}, {686.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                      Other, 0x113f74dc0, {{97.0, 71.7}, {680.0, 3.0}}
+                          Other, 0x113f76800, {{0.0, 0.0}, {874.0, 402.0}}
+                            Other, 0x113f77980, {{0.0, 0.0}, {874.0, 132.8}}
+                          Other, 0x113f77ac0, {{0.0, 0.0}, {874.0, 402.0}}
+                            Other, 0x113f77340, {{0.0, 0.0}, {874.0, 132.8}}
+                              Other, 0x113f77200, {{0.0, 0.0}, {874.0, 56.3}}
+                              Other, 0x113f77700, {{0.0, 0.0}, {874.0, 132.8}}
+                                Other, 0x113f75b80, {{0.0, 0.0}, {874.0, 132.8}}
+                              Other, 0x113f76f80, {{0.0, 0.0}, {874.0, 132.8}}
+                                Other, 0x113f766c0, {{0.0, 0.0}, {874.0, 132.8}}
+                              Other, 0x108267480, {{0.0, 0.0}, {874.0, 132.8}}
+                                Other, 0x108264500, {{0.0, 0.0}, {874.0, 132.8}}
+                                Other, 0x113d59180, {{0.0, 0.0}, {874.0, 132.8}}
+                          Other, 0x113d58b40, {{0.0, 124.7}, {874.0, 977.3}}
+                          Cell, 0x113d58c80, {{0.0, 146.7}, {874.0, 40.3}}
+                            Other, 0x113d58500, {{0.0, 146.7}, {874.0, 40.3}}
+                            Other, 0x113d58640, {{62.0, 146.7}, {750.0, 40.3}}
+                              Other, 0x113d58780, {{62.0, 146.7}, {750.0, 40.3}}
+                                Other, 0x113d58f00, {{62.0, 146.7}, {750.0, 40.3}}
+                                  StaticText, 0x113d59040, {{0.0, 146.7}, {874.0, 40.3}}, label: 'Notes'
+                          Cell, 0x113d4e1c0, {{0.0, 187.0}, {874.0, 111.0}}
+                            Other, 0x113d4e800, {{0.0, 187.0}, {874.0, 111.0}}
+                              Other, 0x113d4dcc0, {{0.0, 187.0}, {874.0, 111.0}}
+                                Other, 0x113d4f980, {{0.0, 187.0}, {874.0, 111.0}}
+                            Other, 0x113d4f700, {{62.0, 187.0}, {750.0, 111.0}}
+                              Other, 0x113d4c8c0, {{62.0, 187.0}, {750.0, 111.0}}
+                                Other, 0x113d4c780, {{62.0, 187.0}, {750.0, 111.0}}
+                                  Button, 0x113d4cf00, {{0.0, 187.0}, {874.0, 111.0}}, identifier: 'captureRow', label: 'A thought in landscape, Sep 16 at 16:38, Note ready'
+                                    StaticText, 0x113d4e580, {{78.0, 202.0}, {696.0, 81.0}}, label: 'A thought in landscape, Sep 16 at 16:38, Note ready'
+                                      StaticText, 0x113d4d7c0, {{78.0, 210.0}, {175.3, 20.3}}, label: 'A thought in landscape'
+                                      StaticText, 0x113d4e080, {{78.0, 238.3}, {88.3, 14.3}}, label: 'Sep 16 at 16:38'
+                                      StaticText, 0x113d4d900, {{78.0, 260.7}, {62.3, 14.3}}, label: 'Note ready'
+                                    Image, 0x113d4f200, {{786.7, 236.7}, {7.0, 12.0}}, identifier: 'chevron.forward'
+                          Other, 0x113d4fe80, {{78.0, 297.0}, {718.0, 1.0}}
+                          Other, 0x113d4ee40, {{841.0, 78.0}, {30.0, 220.0}}, label: 'Vertical scroll bar, 2 pages', value: 100%
+                            Other, 0x113d4cdc0, {{868.0, 140.3}, {3.0, 154.7}}
+                          Other, 0x113d4da40, {{841.0, 78.0}, {30.0, 220.0}}, label: 'Vertical scroll bar, 2 pages', value: 100%
+                            Other, 0x113d4e6c0, {{868.0, 140.3}, {3.0, 154.7}}
+                        Button, 0x113d4d180, {{77.5, 313.5}, {719.0, 53.0}}, identifier: 'saveThought', label: 'Save Note', Disabled
+                Other, 0x113d4d2c0, {{0.0, 0.0}, {874.0, 402.0}}
+                  Other, 0x113d4d040, {{0.0, 0.0}, {874.0, 402.0}}
+    Window, 0x113d4cc80, {{0.0, 0.0}, {874.0, 402.0}}
+      Other, 0x113d4e940, {{0.0, 0.0}, {874.0, 402.0}}
+        Other, 0x113d4f5c0, {{0.0, 0.0}, {874.0, 402.0}}
+Path to element:
+ →Application, 0x113f74a00, pid: 57225, label: 'Flick'
+Query chain:
+ →Find: Target Application 'com.progentic.flick'
+  Output: {
+    Application, 0x113d4ca00, pid: 57225, label: 'Flick'
+  }

@@ -64,9 +64,11 @@ evaluates every manifest, resolves dependencies, builds all modules, and runs
 applicable tests on macOS. There are no placeholder behavior tests.
 
 `scripts/ui-enforce.sh` reports NOT_APPLICABLE only when no app project or UI
-implementation exists. On detecting UI it returns INCONCLUSIVE until the
-rendered-evidence and human-review controls are implemented for that milestone.
-It cannot manufacture human visual approval.
+implementation exists. With UI present it verifies `.ui-evidence.json`: source
+fingerprint, required rendered surfaces and hashes, executed automated checks,
+and an identified human approval for that same fingerprint. Missing evidence
+or approval is INCONCLUSIVE; stale or altered evidence is FAIL. The agent cannot
+manufacture human visual approval. Owner approval must precede recording it.
 
 Exit codes: 0 for PASS/NOT_APPLICABLE, 1 for FAIL, 2 for INCONCLUSIVE. Missing
 Python, Git, compatible Swift, or a trustworthy comparison base fails closed.

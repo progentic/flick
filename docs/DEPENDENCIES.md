@@ -24,8 +24,9 @@ required cloud AI SDK.
 ## Bootstrap tooling
 
 There are no third-party Swift packages. All declared package dependencies are
-local edges in `.repo-policy.json`. Seven packages are compile/interface scaffolds;
-only FlickDomain currently has behavioral tests.
+local edges in `.repo-policy.json`. At bootstrap seven packages were scaffolds. The current text kernel implements
+CECapture, CEIngestion, CEStorage, CEPipelines, and CEUI; CESemantic and CEOutput
+remain deferred. No later-milestone framework or third-party package is added.
 
 Portable governance uses Git, Bash, and Python 3's standard library. Local
 optional analysis used actionlint 1.7.12 and ShellCheck 0.11.0; CI does not require

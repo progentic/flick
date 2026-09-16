@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "base_commit": "f802005ad49e9b3074cbc2bc35d6212dedc2ade8",
+  "source_fingerprint": "42ddc9eafa76a54815d03b4a3849995a2dc528c8bba29b9091b9fae1e9975dae",
+  "runtime": "iPhone 17 Simulator, iOS 26.5 (23F77)",
+  "surfaces": {
+    "empty": {
+      "path": "docs/verification/v0.1.0/ui/01-empty-light.png",
+      "sha256": "42fa2f3f40200056fe64b12e87d39305ae566491f9dcdb8f4ffc07618a10e2e2"
+    },
+    "entry": {
+      "path": "docs/verification/v0.1.0/ui/02-text-entry.png",
+      "sha256": "ab5ab1cbb2e3b542135dfee6502fac34f1b140b84c6722c6326ae1f5a2b30657"
+    },
+    "saving": {
+      "path": "docs/verification/v0.1.0/ui/07-saving.png",
+      "sha256": "b21327c36a18c3992b4caa4b5b7286717f65e4131de2e7cafab187724b62ff7d"
+    },
+    "processing": {
+      "path": "docs/verification/v0.1.0/ui/05-processing.png",
+      "sha256": "7b84c765b11ede9e50947bd0012e8a0d951f38916f2d60fad7154b9631883a16"
+    },
+    "note": {
+      "path": "docs/verification/v0.1.0/ui/03-note-ready.png",
+      "sha256": "12e0aeded77e19f590c58cb1d5ed1c04334693f52c24882036598035decef3a8"
+    },
+    "save_failure": {
+      "path": "docs/verification/v0.1.0/ui/06-save-failure-retry.png",
+      "sha256": "02fba64a1acbe2ab487619cbd93e0906ceacc20d7a177fef3410b08089e22fa0"
+    },
+    "load_failure": {
+      "path": "docs/verification/v0.1.0/ui/08-open-failure.png",
+      "sha256": "3b5ec3eaacef98fce7619fef3a8f94c94bd97a915db965b1ab180901294d071c"
+    },
+    "processing_failure": {
+      "path": "docs/verification/v0.1.0/ui/11-processing-failure.png",
+      "sha256": "c501fb3c159daccee8f2975de86aa2f83865fe99d690f8dc056c26b9fd616bc4"
+    },
+    "dark": {
+      "path": "docs/verification/v0.1.0/ui/10-dark-feed.png",
+      "sha256": "57005a22a098cfce19e768283f397d99819fd28f729bd65c93c20c6f5b73b282"
+    },
+    "large_type": {
+      "path": "docs/verification/v0.1.0/ui/14-large-type-feed.png",
+      "sha256": "b043765eca585f4dd3910a681b7bbadaae73745aad704d9cd684abdf13a5ee06"
+    },
+    "high_contrast": {
+      "path": "docs/verification/v0.1.0/ui/high-contrast-12-light-accessibility-audit.png",
+      "sha256": "2e0d91aab878c0de4df8a4f06bfacbc76d7cc2195fd4b345dc075fd19e613005"
+    },
+    "saved": {
+      "path": "docs/verification/v0.1.0/ui/16-saved.png",
+      "sha256": "04138478a7e0e4bda97a7b318e861026c2a783a87cf7fe9d20627bfb8ca03a50"
+    }
+  },
+  "checks": {
+    "ui_tests": "PASS",
+    "accessibility_audits": "PASS",
+    "contrast": "PASS",
+    "dynamic_type": "PASS"
+  },
+  "human_approval": {
+    "reviewer": "Repository owner (explicit user approval in this conversation)",
+    "decision": "approved",
+    "date": "2026-09-16",
+    "source_fingerprint": "42ddc9eafa76a54815d03b4a3849995a2dc528c8bba29b9091b9fae1e9975dae",
+    "review_record": "docs/verification/v0.1.0/VISUAL-APPROVAL.md",
+    "screenshot_count": 18,
+    "screenshot_sha256": {
+      "docs/verification/v0.1.0/ui/01-empty-light.png": "42fa2f3f40200056fe64b12e87d39305ae566491f9dcdb8f4ffc07618a10e2e2",
+      "docs/verification/v0.1.0/ui/02-text-entry.png": "ab5ab1cbb2e3b542135dfee6502fac34f1b140b84c6722c6326ae1f5a2b30657",
+      "docs/verification/v0.1.0/ui/03-note-ready.png": "12e0aeded77e19f590c58cb1d5ed1c04334693f52c24882036598035decef3a8",
+      "docs/verification/v0.1.0/ui/04-durable-pending.png": "f18fa8c52f1fea90d07e655ceb7a2c54d920565f8fb29783067f98b458e389cc",
+      "docs/verification/v0.1.0/ui/05-processing.png": "7b84c765b11ede9e50947bd0012e8a0d951f38916f2d60fad7154b9631883a16",
+      "docs/verification/v0.1.0/ui/06-save-failure-retry.png": "02fba64a1acbe2ab487619cbd93e0906ceacc20d7a177fef3410b08089e22fa0",
+      "docs/verification/v0.1.0/ui/07-saving.png": "b21327c36a18c3992b4caa4b5b7286717f65e4131de2e7cafab187724b62ff7d",
+      "docs/verification/v0.1.0/ui/08-open-failure.png": "3b5ec3eaacef98fce7619fef3a8f94c94bd97a915db965b1ab180901294d071c",
+      "docs/verification/v0.1.0/ui/09-dark-accessibility-size.png": "e9033a4fc57838cb401c170f2d0098dea03d78311659e4391207b9d406a35b80",
+      "docs/verification/v0.1.0/ui/10-dark-feed.png": "57005a22a098cfce19e768283f397d99819fd28f729bd65c93c20c6f5b73b282",
+      "docs/verification/v0.1.0/ui/11-processing-failure.png": "c501fb3c159daccee8f2975de86aa2f83865fe99d690f8dc056c26b9fd616bc4",
+      "docs/verification/v0.1.0/ui/12-light-accessibility-audit.png": "243230e89d141fb8e1984320cb5b8b813aa14a84b283cb4d0596e3d2f8041e2c",
+      "docs/verification/v0.1.0/ui/13-landscape.png": "93e4e311bf258cf9b749387212e4d0e04384c4539bbbb1de6fe1648176d09226",
+      "docs/verification/v0.1.0/ui/14-large-type-feed.png": "b043765eca585f4dd3910a681b7bbadaae73745aad704d9cd684abdf13a5ee06",
+      "docs/verification/v0.1.0/ui/15-note-original-capture.png": "cd484357575d16fd4ac815475d43d410722949d0847db036c5027e806ba07a4d",
+      "docs/verification/v0.1.0/ui/16-saved.png": "04138478a7e0e4bda97a7b318e861026c2a783a87cf7fe9d20627bfb8ca03a50",
+      "docs/verification/v0.1.0/ui/high-contrast-10-dark-feed.png": "e9c043dc68b2088ed32ee87c51de71405bb0c82d522bf7a75e81506745ac46d2",
+      "docs/verification/v0.1.0/ui/high-contrast-12-light-accessibility-audit.png": "2e0d91aab878c0de4df8a4f06bfacbc76d7cc2195fd4b345dc075fd19e613005"
+    },
+    "scope": "Visual approval only; no commit, push, tag, or release authorization."
+  }
+}

@@ -1,0 +1,76 @@
+Attributes: Application, 0x105c7a440, pid: 57337, label: 'Flick'
+Element subtree:
+ →Application, 0x105c7a440, pid: 57337, label: 'Flick'
+    Window (Main), 0x105c7abc0, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x105c78c80, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x105c79e00, {{0.0, 0.0}, {402.0, 874.0}}
+          Other, 0x105c7a300, {{0.0, 0.0}, {402.0, 874.0}}
+            Other, 0x105c7a940, {{0.0, 0.0}, {402.0, 874.0}}
+              Other, 0x105c79f40, {{0.0, 0.0}, {402.0, 874.0}}
+                NavigationBar, 0x105c7a580, {{0.0, 62.0}, {402.0, 106.0}}, identifier: 'Flick'
+                  StaticText, 0x105c79b80, {{16.0, 119.7}, {74.0, 40.7}}, label: 'Flick'
+                Other, 0x105c79900, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x105c7af80, {{0.0, 0.0}, {402.0, 874.0}}
+                    Other, 0x105c78140, {{0.0, 0.0}, {402.0, 874.0}}
+                      Other, 0x105c78000, {{0.0, 0.0}, {402.0, 874.0}}
+                        CollectionView, 0x105c78a00, {{0.0, 0.0}, {402.0, 874.0}}
+                          Other, 0x105c788c0, {{0.0, -1580.0}, {402.0, 1948.7}}
+                          Other, 0x105c78dc0, {{0.0, 0.0}, {402.0, 874.0}}
+                            Other, 0x105c79180, {{0.0, 0.0}, {402.0, 170.8}}
+                          Other, 0x105c79a40, {{0.0, 0.0}, {402.0, 874.0}}
+                          Cell, 0x105c7ae40, {{0.0, 168.0}, {402.0, 200.7}}
+                            Other, 0x105c7ad00, {{0.0, 168.0}, {402.0, 200.7}}
+                              Other, 0x105c7aa80, {{0.0, 168.0}, {402.0, 200.7}}
+                                Other, 0x105c79cc0, {{0.0, 168.0}, {402.0, 200.7}}
+                            Other, 0x105c79540, {{0.0, 168.0}, {402.0, 200.7}}
+                              Other, 0x105c797c0, {{0.0, 168.0}, {402.0, 200.7}}
+                                Other, 0x105c78f00, {{0.0, 168.0}, {402.0, 200.7}}
+                                  StaticText, 0x105c792c0, {{16.0, 199.0}, {252.0, 26.3}}, label: 'A thought worth keeping.'
+                                  TextField, 0x105c79400, {{32.0, 257.3}, {338.0, 64.3}}, identifier: 'thoughtInput', label: 'Your note', placeholderValue: 'What's on your mind?'
+                                    Other, 0x105c79040, {{32.0, 257.3}, {0.0, 0.0}}, identifier: '_UITextSelectionRangeAdjustmentContainerView'
+                                      Other, 0x105c78b40, {{32.0, 257.3}, {0.0, 0.0}}, identifier: 'com.apple.text.grabber.leading'
+                                        Other, 0x105c78640, {{24.8, 243.8}, {16.5, 16.5}}
+                                        Other, 0x105c783c0, {{32.0, 257.3}, {2.0, 0.0}}
+                                      Other, 0x105c78780, {{32.0, 257.3}, {0.0, 0.0}}, identifier: 'com.apple.text.grabber.leading'
+                                        Other, 0x105c7a800, {{24.8, 243.8}, {16.5, 16.5}}
+                                        Other, 0x105c79680, {{32.0, 257.3}, {2.0, 0.0}}
+                                    Other, 0x105c7a6c0, {{32.0, 288.7}, {338.0, 30.0}}, label: 'Horizontal scroll bar, 1 page', value: 0%
+                                      Other, 0x105c7a080, {{35.0, 315.7}, {332.0, 3.0}}
+                          Other, 0x105c7a1c0, {{0.0, 368.7}, {402.0, 1921.3}}
+                          Cell, 0x10260f480, {{0.0, 390.7}, {402.0, 40.3}}
+                            Other, 0x10260f700, {{0.0, 390.7}, {402.0, 40.3}}
+                            Other, 0x10260f840, {{0.0, 390.7}, {402.0, 40.3}}
+                              Other, 0x10260fc00, {{0.0, 390.7}, {402.0, 40.3}}
+                                Other, 0x10260f340, {{0.0, 390.7}, {402.0, 40.3}}
+                                  StaticText, 0x10260fd40, {{0.0, 390.7}, {402.0, 40.3}}, label: 'Notes'
+                          Cell, 0x10260f200, {{0.0, 431.0}, {402.0, 111.0}}
+                            Other, 0x10260ef80, {{0.0, 431.0}, {402.0, 111.0}}
+                              Other, 0x10260f5c0, {{0.0, 431.0}, {402.0, 111.0}}
+                                Other, 0x10260fe80, {{0.0, 431.0}, {402.0, 111.0}}
+                            Other, 0x10260f980, {{0.0, 431.0}, {402.0, 111.0}}
+                              Other, 0x10260fac0, {{0.0, 431.0}, {402.0, 111.0}}
+                                Other, 0x105cbb480, {{0.0, 431.0}, {402.0, 111.0}}
+                                  Button, 0x105cbbc00, {{0.0, 431.0}, {402.0, 111.0}}, identifier: 'captureRow', label: 'Walk by the river this evening, Sep 16 at 16:40, Note ready'
+                                    StaticText, 0x105cbb700, {{16.0, 446.0}, {348.0, 81.0}}, label: 'Walk by the river this evening, Sep 16 at 16:40, Note ready'
+                                      StaticText, 0x105cbb840, {{16.0, 454.0}, {222.3, 20.3}}, label: 'Walk by the river this evening'
+                                      StaticText, 0x105cbbac0, {{16.0, 482.3}, {88.3, 14.3}}, label: 'Sep 16 at 16:40'
+                                      StaticText, 0x105cbb980, {{16.0, 504.7}, {62.3, 14.3}}, label: 'Note ready'
+                                    Image, 0x105cbb5c0, {{376.7, 480.7}, {7.0, 12.0}}, identifier: 'chevron.forward'
+                          Other, 0x105cbbe80, {{16.0, 541.0}, {370.0, 1.0}}
+                          Other, 0x105cbbd40, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                            Other, 0x105ef9680, {{396.0, 349.3}, {3.0, 403.7}}
+                          Other, 0x105ef9cc0, {{369.0, 116.0}, {30.0, 640.0}}, label: 'Vertical scroll bar, 1 page', value: 0%
+                            Other, 0x105ef9e00, {{396.0, 349.3}, {3.0, 403.7}}
+                        Button, 0x105ef9a40, {{15.5, 771.5}, {371.0, 53.0}}, identifier: 'saveThought', label: 'Save Note', Disabled
+                Other, 0x105ef9b80, {{0.0, 0.0}, {402.0, 874.0}}
+                  Other, 0x105ef97c0, {{0.0, 0.0}, {402.0, 874.0}}
+    Window, 0x105ef9900, {{0.0, 0.0}, {402.0, 874.0}}
+      Other, 0x105ef92c0, {{0.0, 0.0}, {402.0, 874.0}}
+        Other, 0x105ef9180, {{0.0, 0.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x105c7a440, pid: 57337, label: 'Flick'
+Query chain:
+ →Find: Target Application 'com.progentic.flick'
+  Output: {
+    Application, 0x105efbe80, pid: 57337, label: 'Flick'
+  }

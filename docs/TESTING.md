@@ -60,3 +60,30 @@ schema versions and migration rules before these values become durable user data
 - ambiguous EventKit external save does not auto-duplicate;
 - denied permissions do not destroy local capture;
 - model unavailable does not block capture.
+
+## v0.1.0 candidate
+
+- `bash scripts/validate-packages.sh` evaluates all manifests, builds all modules,
+  runs applicable unit/integration tests, and builds the real signed simulator app.
+- `bash scripts/test-ios.sh SIMULATOR_UUID` executes the shared Flick scheme's
+  native UI tests. The script can select an available iOS 26+ iPhone simulator
+  when no UUID is given. It fails INCONCLUSIVE when no runtime is installed.
+- Runtime tests require ad-hoc simulator signing; an unsigned build does not
+  register the App Group. This is not physical-device provisioning.
+- CEStorage tests use on-disk SwiftData stores, reopen them, and exercise actual
+  read-only write errors. CEPipelines tests compose those real stores. UI model
+  tests use controlled capabilities only to prove presentation ordering; they
+  are not counted as persistence evidence.
+- Native tests terminate the application after a pending save and after a
+  processing claim, then relaunch against the same isolated store. Save delays
+  and read-only configuration exercise real state boundaries without fake saved
+  rows. Test namespaces and boundary controls are Debug-only and absent in Release.
+- App contains composition/lifecycle only, so no redundant application unit-test
+  target is added. Package unit/integration tests plus the real app UI suite are
+  the applicable tests.
+- Native accessibility audits cover contrast, hit regions, descriptions, traits,
+  and clipping on the exercised states. Large Dynamic Type, portrait/landscape,
+  and high-contrast rendering are exercised separately. These do not substitute
+  for human aesthetic approval or claim an audible VoiceOver session occurred.
+- The current candidate's tests, screenshots, timing observations, and remaining
+  gates are recorded in `verification/v0.1.0/RESULTS.md` and root `UI-REVIEW.md`.

@@ -1,6 +1,12 @@
 # Flick Documentation Index
 
-Current repository state: `v0.0.0`.
+Validated baseline: bootstrap commit `f802005`. Active candidate: uncommitted `v0.1.0`.
+Current evidence: `verification/v0.1.0/RESULTS.md`.
+
+## Start here
+
+- [User guide](USER_GUIDE.md) — saving, reading, and retrying notes
+- [Developer guide](DEVELOPMENT.md) — setup, run commands, and repository checks
 
 ## Core authority
 
