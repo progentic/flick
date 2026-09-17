@@ -16,9 +16,27 @@ capture/relaunch/delete, independent identical captures, post-save recovery,
 post-claim recovery, and processing-failure recovery. A two-second presentation
 state cannot establish a durable boundary. All five uses are removed.
 
+## Additional hosted finding
+
+The first repair candidate `41fd5d1df3fc26a65e77c6f23e13875db14b2f3f`
+passed hosted governance but [its package job](https://github.com/progentic/flick/actions/runs/35178660338)
+failed before the UI step. `successIsBriefAndDoesNotClearANewDraft` assumed that
+sleeping for 50 ms guaranteed completion of a 20 ms unstructured feedback task;
+the runner observed `.saved` at the expected `.idle` assertion. No product data
+loss or broken persistence was demonstrated.
+
+The narrowly necessary scope extension is
+`Packages/CEUI/Tests/CEUITests/CaptureScreenModelTests.swift`. Both fixed sleeps
+are replaced with awaiting the existing feedback task's completion/cancellation.
+All state/draft assertions and the existing injected duration remain unchanged.
+A test-only Mirror lookup obtains Observation's `_savedFeedbackTask` backing
+field and fails via `#require` if that implementation detail changes. This avoids
+adding a production test API. The test has a one-minute execution limit, which
+is a failure bound, not timing padding. This protects I3, I8 and I10.
+
 ## Changes
 
-Only `App/FlickUITests/FlickUITests.swift` changes executable code:
+Only UI-test code and one CEUI unit test change executable code:
 
 - `focusEditorAndType` waits for existence, enabled state and hittability, taps
   the identified editor, then waits for the focus-driven native Done control
@@ -55,7 +73,9 @@ state. The acknowledgement writer reservation uses an empty `BEGIN IMMEDIATE`
 transaction and closes/rolls it back without any INSERT, UPDATE, DELETE or DDL.
 All capture/output data still comes through the real UI and production save path.
 
-This probe is deliberately Simulator/Schema V1 specific. A schema change must
+This probe is deliberately Simulator/Schema V1 specific. The CEUI task lookup is
+also deliberately tied to the existing Observable backing field and fails closed
+on a rename or reflection-layout change. A schema change must
 update it explicitly. It is not evidence for production multi-writer support.
 No package dependency, project configuration, application source, production
 focus/timing, persistence behavior, or approved screenshot is changed.
@@ -80,7 +100,7 @@ focus/timing, persistence behavior, or approved screenshot is changed.
 | Pattern | Result |
 |---|---|
 | Transient label used for persistence/recovery | Absent. Only the focused acknowledgement helper waits for Saved. Persistent row-status copy checks remain secondary UI assertions. |
-| Timing-only synchronization | No sleep/usleep/asyncAfter added; all waits have observable predicates. Existing 120-second DEBUG boundary holds remain unchanged, and tests observe state rather than wait for their timers. |
+| Timing-only synchronization | No sleep/usleep/asyncAfter added; the two existing unit-test sleeps are removed. Waits observe predicates or actual task completion. Existing 120-second DEBUG boundary holds remain unchanged, and tests observe state rather than wait for their timers. |
 | Product changes for tests | None. No longer Saved duration, autofocus, or new app test controls. |
 | Fake persistence | None. Probe reads records; empty writer reservation never seeds or edits them. |
 | Weakened assertions | None. Exact one/two assertions retained and extended to IDs, keys and provenance. |
@@ -110,7 +130,8 @@ iOS 26.5 (23F77). Requirements remain Swift tools 6.3, Swift 6 mode, iOS 26.
 | Four formerly failing tests together | PASS, 4/4 | `/tmp/flick-sync-four.xcresult` |
 | Focused acknowledgement test | PASS | `/tmp/flick-sync-ack.xcresult`; actual writer reservation/release verified |
 | Complete UI suite via repository script | PASS, 12/12 | 247.048 seconds; zero failures, zero skipped; `/tmp/flick-sync-full/Flick.xcresult` |
-| Package gates | PASS | 78 tests: Domain 43, Capture 3, Ingestion 2, Storage 13, Pipelines 5, CEUI 12; all eight packages resolve/build |
+| Focused CEUI expiry/cancellation test after hosted finding | PASS | `/tmp/flick-sync-unit-expiry.log`; actual task completion, no fixed sleeps |
+| Package gates (repeated after unit-test correction) | PASS | 78 tests: Domain 43, Capture 3, Ingestion 2, Storage 13, Pipelines 5, CEUI 12; all eight packages resolve/build |
 | App build | PASS | `/tmp/flick-sync-packages/app.log` |
 | Repository and UI governance | PASS | Source/import/inventory checks and unchanged explicit human approval |
 | Governance negative controls | PASS, 16 tests | `/tmp/flick-sync-governance-tests.log` |
@@ -137,6 +158,11 @@ shellcheck scripts/*.sh
 for script in scripts/*.sh; do bash -n "$script"; done
 git diff --check
 ```
+
+The UI test file and production source remain identical to the full passing local
+UI run after the CEUI-only unit-test correction; its package gate was rerun with
+all 78 tests and the app build. That unit-test target is not part of the UI app
+or UI-test runner. No unnecessary repeat of unchanged local UI cases is claimed.
 
 The full run has no `only-testing`, skip, or retry flags. Focused selections are
 local triage only. The full-run directory reuses the local build cache through

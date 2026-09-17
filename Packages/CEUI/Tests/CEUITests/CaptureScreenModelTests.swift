@@ -78,19 +78,19 @@ import FlickDomain
         #expect(model.saveMessage == "Saved")
     }
 
-    @Test func successIsBriefAndDoesNotClearANewDraft() async throws {
+    @Test(.timeLimit(.minutes(1))) func successIsBriefAndDoesNotClearANewDraft() async throws {
         let model = CaptureScreenModel(actions: CaptureActions(capture: CaptureCoordinator { $0 },
             load: { [] }, delete: { _ in }, retry: { _ in }, process: {}), savedFeedbackDuration: .milliseconds(20))
         await model.reload()
         model.draft = "First"
         await model.save()
         #expect(model.saveState == .saved)
-        try await Task.sleep(for: .milliseconds(50))
+        try await feedbackTask(in: model).value
         #expect(model.saveState == .idle)
         model.draft = "Second"
         await model.save()
         model.draft = "Still editing"
-        try await Task.sleep(for: .milliseconds(50))
+        try await feedbackTask(in: model).value
         #expect(model.saveState == .idle)
         #expect(model.draft == "Still editing")
     }
@@ -120,6 +120,14 @@ import FlickDomain
         await model.retry(capture.id)
         #expect(model.needsRetry(item))
         #expect(model.items.first?.capture.status == .pending)
+    }
+
+    /// Await the actual unstructured task without exposing a product testing API.
+    /// Observation synthesizes this backing field. A rename/layout change fails
+    /// #require explicitly; it cannot silently remove the completion assertion.
+    private func feedbackTask(in model: CaptureScreenModel) throws -> Task<Void, Never> {
+        let field = Mirror(reflecting: model).children.first { $0.label == "_savedFeedbackTask" }
+        return try #require(field?.value as? Task<Void, Never>)
     }
 
     private func makeModel(capture: any CaptureCoordinating) async -> CaptureScreenModel {
