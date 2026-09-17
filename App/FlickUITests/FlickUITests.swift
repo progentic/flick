@@ -1,5 +1,6 @@
 import XCTest
 import UIKit
+import SQLite3
 
 final class FlickUITests: XCTestCase {
     @MainActor func testCaptureRelaunchAndDelete() throws {
@@ -7,20 +8,18 @@ final class FlickUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.otherElements["emptyFeed"].waitForExistence(timeout: 15) || app.staticTexts["No notes yet."].exists)
         record(app, "01-empty-light")
-        try enter(app, "Walk by the river this evening")
+        try focusEditorAndType(app, "Walk by the river this evening")
         XCTAssertEqual(app.buttons["saveThought"].label, "Save Note")
         record(app, "02-text-entry")
-        // Dismiss before observing the brief acknowledgement: keyboard/navigation
-        // settling can consume its two-second lifetime before XCTest resumes.
+        // Finish editing before observing the persisted feed.
         dismissKeyboard(app)
         app.buttons["saveThought"].tap()
-        waitForSaved(app)
-        record(app, "16-saved")
+        try waitForNoteReady(app, text: "Walk by the river this evening", count: 1)
         dismissKeyboard(app)
         XCTAssertTrue(app.staticTexts["Note ready"].waitForExistence(timeout: 10))
         record(app, "03-note-ready")
         app.staticTexts["Walk by the river this evening"].tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Original capture")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Original capture")).element.waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts.matching(identifier: "Walk by the river this evening").count, 2)
         record(app, "15-note-original-capture")
         app.navigationBars.buttons.element(boundBy: 0).tap()
@@ -28,10 +27,10 @@ final class FlickUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.staticTexts["Note ready"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts["Walk by the river this evening"].exists)
-        let row = app.buttons.matching(identifier: "captureRow").firstMatch
+        let row = app.buttons.matching(identifier: "captureRow").element
         if row.exists { row.swipeLeft() } else { app.staticTexts["Walk by the river this evening"].swipeLeft() }
-        app.buttons["Delete"].firstMatch.tap()
-        app.buttons["Delete note"].firstMatch.tap()
+        app.buttons["Delete"].tap()
+        app.buttons["Delete note"].tap()
         XCTAssertTrue(app.staticTexts["No notes yet."].waitForExistence(timeout: 10))
         app.terminate()
         app.launch()
@@ -42,37 +41,38 @@ final class FlickUITests: XCTestCase {
         let app = configuredApp()
         app.launchEnvironment["FLICK_TEST_PAUSE"] = "after-save"
         app.launch()
-        try enter(app, "Keep the original across a kill")
+        try focusEditorAndType(app, "Keep the original across a kill")
         app.buttons["saveThought"].tap()
-        waitForSaved(app)
+        let captured = try waitForPersistedBoundary(app, state: "pending", text: "Keep the original across a kill")
         dismissKeyboard(app)
         XCTAssertTrue(app.staticTexts["Saved · Finishing note…"].waitForExistence(timeout: 10))
         record(app, "04-durable-pending")
         app.terminate()
         app.launchEnvironment.removeValue(forKey: "FLICK_TEST_PAUSE")
         app.launch()
-        XCTAssertTrue(app.staticTexts["Note ready"].waitForExistence(timeout: 15))
-        XCTAssertEqual(app.staticTexts.matching(identifier: "Keep the original across a kill").count, 1)
+        try waitForRecoveredNote(app, capture: captured)
+        XCTAssertEqual(app.staticTexts.matching(identifier: captured.text).count, 1)
     }
 
     @MainActor func testKillWhileProcessingRecoversWithoutDuplicate() throws {
         let app = configuredApp()
         app.launchEnvironment["FLICK_TEST_PAUSE"] = "after-claim"
         app.launch()
-        try enter(app, "One thought, one local note")
+        try focusEditorAndType(app, "One thought, one local note")
         app.buttons["saveThought"].tap()
-        waitForSaved(app)
+        let captured = try waitForPersistedBoundary(app, state: "processing", text: "One thought, one local note")
         dismissKeyboard(app)
         XCTAssertTrue(app.staticTexts["Saved · Finishing note…"].waitForExistence(timeout: 10))
         record(app, "05-processing")
         app.terminate()
         app.launchEnvironment.removeValue(forKey: "FLICK_TEST_PAUSE")
         app.launch()
-        XCTAssertTrue(app.staticTexts["Note ready"].waitForExistence(timeout: 15))
+        let firstRecovery = try waitForRecoveredNote(app, capture: captured)
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.staticTexts["Note ready"].waitForExistence(timeout: 15))
-        XCTAssertEqual(app.staticTexts.matching(identifier: "One thought, one local note").count, 1)
+        let secondRecovery = try waitForRecoveredNote(app, capture: captured)
+        XCTAssertEqual(firstRecovery, secondRecovery, "Recovery must retain the same output identity/key")
+        XCTAssertEqual(app.staticTexts.matching(identifier: captured.text).count, 1)
     }
 
     @MainActor func testFailureDoesNotClaimSavedAndRetryRetainsText() throws {
@@ -82,7 +82,7 @@ final class FlickUITests: XCTestCase {
         app.terminate()
         app.launchEnvironment["FLICK_TEST_READ_ONLY"] = "1"
         app.launch()
-        try enter(app, "Do not lose this draft")
+        try focusEditorAndType(app, "Do not lose this draft")
         app.buttons["saveThought"].tap()
         XCTAssertTrue(app.staticTexts["Couldn't save note. Your text is still here."].waitForExistence(timeout: 10))
         XCTAssertNotEqual(app.buttons["saveThought"].label, "Saved")
@@ -103,7 +103,7 @@ final class FlickUITests: XCTestCase {
         let app = configuredApp()
         app.launchEnvironment["FLICK_TEST_PAUSE"] = "saving"
         app.launch()
-        try enter(app, "Wait for the real save")
+        try focusEditorAndType(app, "Wait for the real save")
         app.buttons["saveThought"].tap()
         XCTAssertTrue(app.buttons["saveThought"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["saveThought"].isEnabled)
@@ -114,12 +114,13 @@ final class FlickUITests: XCTestCase {
         app.launchEnvironment.removeValue(forKey: "FLICK_TEST_PAUSE")
         app.launch()
         XCTAssertTrue(app.staticTexts["No notes yet."].waitForExistence(timeout: 15))
+        try assertSaveAcknowledgement(app)
     }
 
     @MainActor func testExistingDataLoadFailureAndRecovery() throws {
         let app = configuredApp()
         app.launch()
-        try enter(app, "Existing data stays safe")
+        try focusEditorAndType(app, "Existing data stays safe")
         app.buttons["saveThought"].tap()
         dismissKeyboard(app)
         XCTAssertTrue(app.staticTexts["Note ready"].waitForExistence(timeout: 10))
@@ -138,20 +139,23 @@ final class FlickUITests: XCTestCase {
     @MainActor func testIndependentSameTextCreatesTwoNotes() throws {
         let app = configuredApp()
         app.launch()
-        for _ in 0..<2 {
-            try enter(app, "Same words, another thought")
-            app.buttons["saveThought"].tap()
-            waitForSaved(app)
-        }
-        dismissKeyboard(app)
-        let ready = app.staticTexts.matching(identifier: "Note ready")
-        let predicate = NSPredicate(format: "count == 2")
-        expectation(for: predicate, evaluatedWith: ready)
-        waitForExpectations(timeout: 10)
+        try saveAndWaitForNotes(app, text: "Same words, another thought", count: 1)
+        let first = try storeProbe(app).captures()
+        try saveAndWaitForNotes(app, text: "Same words, another thought", count: 2)
+        let second = try storeProbe(app).captures()
+        XCTAssertEqual(first.count, 1)
+        XCTAssertEqual(second.count, 2)
+        XCTAssertEqual(Set(second.map(\.id)).count, 2)
+        XCTAssertTrue(second.contains(first[0]))
+        let notes = try storeProbe(app).notes()
+        XCTAssertEqual(Set(notes.map(\.id)).count, 2)
+        XCTAssertEqual(Set(notes.map(\.key)).count, 2)
+        XCTAssertEqual(Set(notes.map(\.captureID)), Set(second.map(\.id)))
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.staticTexts["Note ready"].firstMatch.waitForExistence(timeout: 15))
-        XCTAssertEqual(ready.count, 2)
+        try waitForNoteReady(app, text: "Same words, another thought", count: 2)
+        XCTAssertEqual(try storeProbe(app).captures(), second)
+        XCTAssertEqual(try storeProbe(app).notes(), notes)
     }
 
     @MainActor func testDarkAndAccessibilityTextLayout() throws {
@@ -159,7 +163,7 @@ final class FlickUITests: XCTestCase {
         XCUIDevice.shared.appearance = .dark
         app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
-        try enter(app, "A longer thought stays readable with larger text.")
+        try focusEditorAndType(app, "A longer thought stays readable with larger text.")
         XCTAssertFalse(app.staticTexts["A thought worth keeping."].exists)
         dismissKeyboard(app)
         for _ in 0..<4 {
@@ -184,7 +188,7 @@ final class FlickUITests: XCTestCase {
         let app = configuredApp()
         XCUIDevice.shared.appearance = .dark
         app.launch()
-        try enter(app, "Take a quiet moment tomorrow.")
+        try focusEditorAndType(app, "Take a quiet moment tomorrow.")
         app.buttons["saveThought"].tap()
         dismissKeyboard(app)
         XCTAssertTrue(app.staticTexts["Note ready"].waitForExistence(timeout: 10))
@@ -206,7 +210,7 @@ final class FlickUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
         app.launch()
-        try enter(app, "A thought in landscape")
+        try focusEditorAndType(app, "A thought in landscape")
         XCTAssertTrue(app.buttons["saveThought"].isHittable)
         app.buttons["saveThought"].tap()
         dismissKeyboard(app)
@@ -219,16 +223,16 @@ final class FlickUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Note ready"].isHittable)
         record(app, "13-landscape")
         app.staticTexts["A thought in landscape"].tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Original capture")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Original capture")).element.waitForExistence(timeout: 5))
     }
 
     @MainActor func testProcessingFailureKeepsDurableThoughtAndCanRecover() throws {
         let app = configuredApp()
         app.launchEnvironment["FLICK_TEST_PAUSE"] = "after-save"
         app.launch()
-        try enter(app, "Safe while processing cannot write")
+        try focusEditorAndType(app, "Safe while processing cannot write")
         app.buttons["saveThought"].tap()
-        waitForSaved(app)
+        let captured = try waitForPersistedBoundary(app, state: "pending", text: "Safe while processing cannot write")
         app.terminate()
         app.launchEnvironment.removeValue(forKey: "FLICK_TEST_PAUSE")
         app.launchEnvironment["FLICK_TEST_READ_ONLY"] = "1"
@@ -241,13 +245,85 @@ final class FlickUITests: XCTestCase {
         app.terminate()
         app.launchEnvironment.removeValue(forKey: "FLICK_TEST_READ_ONLY")
         app.launch()
-        XCTAssertTrue(app.staticTexts["Note ready"].waitForExistence(timeout: 15))
+        try waitForRecoveredNote(app, capture: captured)
     }
 
-    @MainActor private func waitForSaved(_ app: XCUIApplication) {
-        let saved = NSPredicate(format: "label == %@", "Saved")
-        let observed = expectation(for: saved, evaluatedWith: app.buttons["saveThought"])
-        wait(for: [observed], timeout: 5)
+    @MainActor private func assertSaveAcknowledgement(_ app: XCUIApplication) throws {
+        try focusEditorAndType(app, "Observe the real save acknowledgement")
+        dismissKeyboard(app)
+        let probe = try storeProbe(app)
+        let lock = try probe.holdWriter()
+        defer { lock.release() }
+        app.buttons["saveThought"].tap()
+        waitForElement(app.buttons["saveThought"], predicate: "label == 'Saving…'")
+        XCTAssertFalse(app.buttons["saveThought"].isEnabled)
+        XCTAssertEqual(try probe.captures().count, 0)
+        lock.release()
+        // Only this presentation test observes the transient acknowledgement.
+        waitForElement(app.buttons["saveThought"], predicate: "label == 'Saved'", timeout: 5)
+        XCTAssertEqual(try probe.captures().count, 1)
+        record(app, "16-saved")
+        waitForElement(app.buttons["saveThought"], predicate: "label == 'Save Note'")
+        try waitForNoteReady(app, text: "Observe the real save acknowledgement", count: 1)
+    }
+
+    @MainActor private func saveAndWaitForNotes(_ app: XCUIApplication, text: String, count: Int) throws {
+        try focusEditorAndType(app, text)
+        dismissKeyboard(app)
+        app.buttons["saveThought"].tap()
+        try waitForNoteReady(app, text: text, count: count)
+    }
+
+    @MainActor private func waitForNoteReady(_ app: XCUIApplication, text: String, count: Int) throws {
+        let probe = try storeProbe(app)
+        try waitForStore(probe) { try $0.hasCompletedNotes(text: text, count: count) }
+        waitForCount(app.staticTexts.matching(identifier: "Note ready"), count: count)
+        XCTAssertEqual(app.staticTexts.matching(identifier: text).count, count)
+    }
+
+    @MainActor private func waitForPersistedBoundary(_ app: XCUIApplication, state: String, text: String) throws -> StoredCapture {
+        let probe = try storeProbe(app)
+        try waitForStore(probe) { try $0.isAtBoundary(state: state, text: text) }
+        let capture = try XCTUnwrap(probe.captures().only)
+        XCTAssertEqual(capture.text, text)
+        XCTAssertEqual(capture.state, state)
+        XCTAssertEqual(try probe.notes().count, 0)
+        return capture
+    }
+
+    @discardableResult
+    @MainActor private func waitForRecoveredNote(_ app: XCUIApplication, capture: StoredCapture) throws -> StoredNote {
+        try waitForNoteReady(app, text: capture.text, count: 1)
+        let probe = try storeProbe(app)
+        let restored = try XCTUnwrap(probe.captures().only)
+        let note = try XCTUnwrap(probe.notes().only)
+        XCTAssertEqual(restored.id, capture.id)
+        XCTAssertEqual(restored.text, capture.text)
+        XCTAssertEqual(note.captureID, capture.id)
+        return note
+    }
+
+    @MainActor private func waitForStore(_ probe: StoreProbe, condition: @escaping (StoreProbe) throws -> Bool) throws {
+        // XCTest polls committed snapshots; SQL errors fail the test, not a retry.
+        var failure: Error?
+        let predicate = NSPredicate { _, _ in
+            do { return try condition(probe) }
+            catch { failure = error; return true }
+        }
+        let observed = XCTNSPredicateExpectation(predicate: predicate, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [observed], timeout: 15), .completed)
+        if let failure { throw failure }
+    }
+
+    @MainActor private func waitForCount(_ query: XCUIElementQuery, count: Int) {
+        let predicate = NSPredicate(format: "count == %d", count)
+        let observed = XCTNSPredicateExpectation(predicate: predicate, object: query)
+        XCTAssertEqual(XCTWaiter.wait(for: [observed], timeout: 15), .completed)
+        XCTAssertEqual(query.count, count)
+    }
+
+    @MainActor private func storeProbe(_ app: XCUIApplication) throws -> StoreProbe {
+        try StoreProbe(namespace: XCTUnwrap(app.launchEnvironment["FLICK_TEST_STORE"]))
     }
 
     @MainActor private func configuredApp() -> XCUIApplication {
@@ -259,11 +335,20 @@ final class FlickUITests: XCTestCase {
         return app
     }
 
-    @MainActor private func enter(_ app: XCUIApplication, _ text: String) throws {
+    @MainActor private func focusEditorAndType(_ app: XCUIApplication, _ text: String) throws {
         let field = input(app)
-        XCTAssertTrue(field.waitForExistence(timeout: 15))
+        waitForElement(field, predicate: "exists == true AND enabled == true AND hittable == true")
         field.tap()
+        // Done is present only while CEUI's actual @FocusState is writing.
+        waitForElement(app.navigationBars.buttons["Done"], predicate: "exists == true AND hittable == true")
+        waitForElement(app.keyboards.element, predicate: "exists == true")
         field.typeText(text)
+        XCTAssertEqual(field.value as? String, text)
+    }
+
+    @MainActor private func waitForElement(_ element: XCUIElement, predicate: String, timeout: TimeInterval = 15) {
+        let observed = XCTNSPredicateExpectation(predicate: NSPredicate(format: predicate), object: element)
+        XCTAssertEqual(XCTWaiter.wait(for: [observed], timeout: timeout), .completed)
     }
 
     @MainActor private func input(_ app: XCUIApplication) -> XCUIElement {
@@ -305,3 +390,131 @@ final class FlickUITests: XCTestCase {
                           "The rendered canvas must actually be dark")
     }
 }
+
+// Simulator-only observation of Schema V1. No app entitlement, dependency,
+// launch flag, or production source change is needed. A different schema must
+// update this probe explicitly; SQL errors fail closed instead of hiding drift.
+private struct StoredCapture: Equatable {
+    let id: String
+    let state: String
+    let text: String
+}
+
+private struct StoredNote: Equatable {
+    let id: String
+    let captureID: String
+    let key: String
+}
+
+private extension Array {
+    var only: Element? { count == 1 ? self[0] : nil }
+}
+
+private struct StoreProbe {
+    let url: URL
+
+    init(namespace: String) throws {
+        let id = try XCTUnwrap(UUID(uuidString: namespace))
+        let root = try XCTUnwrap(ProcessInfo.processInfo.environment["SIMULATOR_SHARED_RESOURCES_DIRECTORY"])
+        let groups = URL(fileURLWithPath: root).appendingPathComponent("Containers/Shared/AppGroup")
+        let candidates = try FileManager.default.contentsOfDirectory(at: groups, includingPropertiesForKeys: nil)
+        let suffix = "Library/Application Support/Flick/UITests/\(id.uuidString)/TextV1.store"
+        let matches = candidates.map { $0.appendingPathComponent(suffix) }
+            .filter { FileManager.default.fileExists(atPath: $0.path) }
+        url = try XCTUnwrap(matches.only, "Expected exactly one store for this test's UUID")
+    }
+
+    func isAtBoundary(state: String, text: String) throws -> Bool {
+        let rows = try captures()
+        let outputs = try notes()
+        return rows.only?.state == state && rows.only?.text == text && outputs.isEmpty
+    }
+
+    func hasCompletedNotes(text: String, count: Int) throws -> Bool {
+        let rows = try captures()
+        let outputs = try notes()
+        return rows.count == count && outputs.count == count
+            && rows.allSatisfy { $0.state == "filed" && $0.text == text }
+            && Set(outputs.map(\.captureID)) == Set(rows.map(\.id))
+    }
+
+    func captures() throws -> [StoredCapture] {
+        try query("SELECT hex(ZID), ZSTATUS, ZTEXT FROM ZCAPTURERECORD ORDER BY ZID")
+            .map { StoredCapture(id: $0[0], state: $0[1], text: $0[2]) }
+    }
+
+    func notes() throws -> [StoredNote] {
+        try query("SELECT hex(ZID), hex(ZSOURCECAPTUREID), ZKEY FROM ZNOTERECORD ORDER BY ZID")
+            .map { StoredNote(id: $0[0], captureID: $0[1], key: $0[2]) }
+    }
+
+    func holdWriter() throws -> StoreWriterLock { try StoreWriterLock(url: url) }
+
+    private func query(_ sql: String) throws -> [[String]] {
+        let connection = try SQLiteConnection(url: url, flags: SQLITE_OPEN_READONLY)
+        return try connection.rows(sql)
+    }
+}
+
+private final class StoreWriterLock {
+    private var connection: SQLiteConnection?
+
+    init(url: URL) throws {
+        let database = try SQLiteConnection(url: url, flags: SQLITE_OPEN_READWRITE)
+        try database.execute("BEGIN IMMEDIATE")
+        connection = database
+    }
+
+    // Closing the connection rolls back the empty transaction and releases its
+    // writer reservation. It never inserts, updates, or deletes a capture/note.
+    func release() { connection = nil }
+}
+
+private final class SQLiteConnection {
+    private var handle: OpaquePointer?
+
+    init(url: URL, flags: Int32) throws {
+        let result = sqlite3_open_v2(url.path, &handle, flags, nil)
+        guard result == SQLITE_OK else {
+            sqlite3_close(handle)
+            handle = nil
+            throw SQLiteProbeError(code: result)
+        }
+    }
+
+    deinit { sqlite3_close(handle) }
+
+    func execute(_ sql: String) throws {
+        let result = sqlite3_exec(handle, sql, nil, nil, nil)
+        guard result == SQLITE_OK else { throw SQLiteProbeError(code: result) }
+    }
+
+    func rows(_ sql: String) throws -> [[String]] {
+        let statement = try prepare(sql)
+        defer { sqlite3_finalize(statement) }
+        var result: [[String]] = []
+        while try advance(statement) {
+            result.append((0..<sqlite3_column_count(statement)).map {
+                String(cString: sqlite3_column_text(statement, $0))
+            })
+        }
+        return result
+    }
+
+    private func prepare(_ sql: String) throws -> OpaquePointer {
+        var statement: OpaquePointer?
+        let result = sqlite3_prepare_v2(handle, sql, -1, &statement, nil)
+        guard result == SQLITE_OK else { throw SQLiteProbeError(code: result) }
+        return try XCTUnwrap(statement)
+    }
+
+    private func advance(_ statement: OpaquePointer) throws -> Bool {
+        switch sqlite3_step(statement) {
+        case SQLITE_ROW: return true
+        case SQLITE_DONE: return false
+        default: throw SQLiteProbeError(code: sqlite3_errcode(handle))
+        }
+    }
+}
+
+private struct SQLiteProbeError: Error { let code: Int32 }

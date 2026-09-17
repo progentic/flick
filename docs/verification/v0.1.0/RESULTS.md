@@ -2,6 +2,10 @@
 
 Date: 2026-09-16
 
+> This is the original implementation handoff. The subsequent `c279cc3` hosted
+> run failed 4 UI tests. See [UI test synchronization repair](UI-TEST-SYNCHRONIZATION.md)
+> for the corrective harness changes and new validation evidence.
+
 ## Outcome
 
 The local text-capture application is implemented and visually approved by the owner.
