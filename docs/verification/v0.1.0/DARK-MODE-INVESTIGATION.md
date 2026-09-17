@@ -145,3 +145,50 @@ images are separate evidence, not regenerated approval artifacts.
 Acceptance still requires exact-candidate hosted governance PASS, package/app
 build PASS, and the complete UI suite 12/12 with no skips. No exception, filtered
 audit issue, expected failure, tag, or release is part of this investigation.
+
+## Hosted diagnostic candidate 51491b0
+
+Exact source: `51491b0fc9a49e89d0ecf8d025610976470587b6`.
+[Governance passed](https://github.com/progentic/flick/actions/runs/35279561749).
+[Packages/app passed; full UI failed](https://github.com/progentic/flick/actions/runs/35279561733):
+11 passed, one failed, zero skipped, zero expected failures. All three original
+persistence/recovery failures passed. Dark typing succeeded; its native contrast
+audit is the sole remaining failure.
+
+Retained environment: Xcode 26.6 (17F113), Swift 6.3.3, iPhone 17e, iOS 26.5
+runtime **23F77**, simulator `DF686390-8E1F-46B8-A4D9-883644620714`.
+The runtime build is established by this run's xcresult/environment metadata;
+it must not be confused with the separately reported SDK build.
+
+The appearance acknowledgement and captured app-owned region both establish
+Dark rendering: RGB `(22,19,16)`, mean 19, spread zero, opaque. The Light control
+measured `(250,250,248)` and rejected the same Dark predicate. The runner's
+current trait diagnostic still reported Light while the app rendered Dark;
+this is runner state, not a claim about the app's actual traits.
+
+The native audit identified `Sep 17 at 10:08 PM`. Its element attachment has
+10,792 background pixels at `(22,19,16)` and 1,377 foreground pixels at
+`(210,201,187)`; that color pair gives **11.291:1**. These are captured hosted
+pixels, not a substitution of source token values. No production contrast
+defect is established. This failure reproduces without requiring local Xcode 27
+or the owner's local Family crash.
+
+Artifacts were successfully retained as
+`flick-ui-51491b0fc9a49e89d0ecf8d025610976470587b6` and downloaded locally to
+`/tmp/flick-51491b0-hosted`; exported attachments are in
+`/tmp/flick-51491b0-attachments`.
+
+### Next controlled comparison
+
+When the complete hosted suite reports this native contrast discrepancy, the
+workflow additionally creates a disposable iPhone 17e / iOS 26.5 simulator,
+sets Dark before the test runner starts, and runs the same audit test alone.
+This isolates prior-test state and runner startup appearance. It does not by
+itself distinguish those two variables. The diagnostic uses the same candidate,
+Xcode selection, native audit and real save path; it retains its own xcresult
+and logs, then deletes only its newly created device.
+
+The full 12-test suite still runs first, unfiltered. Its failure remains a job
+failure even if this additional diagnostic passes. This is a controlled
+comparison after a specific observed failure, not a retry-to-green policy or
+a replacement acceptance gate. No test or native audit assertion is suppressed.
