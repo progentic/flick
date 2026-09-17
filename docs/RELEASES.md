@@ -1,7 +1,7 @@
 # Releases
 
-Version: 1.1\
-Last Reviewed: 2026-09-16\
+Version: 1.2\
+Last Reviewed: 2026-09-17\
 Status: Active version policy
 
 ## Version scheme
@@ -38,6 +38,21 @@ A tag/release must identify the exact commit that passed required validation.
 
 Do not tag a tree merely because documentation was copied or because historical
 logs report success.
+
+## Tagged milestones
+
+Both annotated tags were created and pushed as `progentic` on 2026-09-17,
+in the order below. These are repository milestone tags, not App Store releases.
+
+| Tag | Exact target | Disposition |
+|---|---|---|
+| `v0.0.1` | `f802005ad49e9b3074cbc2bc35d6212dedc2ade8` | Validated repository bootstrap |
+| `v0.1.0` | `2ec113ca9ea94092d2a00f38a3280938bc08d17f` | ACCEPTED — Text Flick / Running Kernel |
+
+The [v0.1.0 verification record](verification/v0.1.0/ACCEPTANCE.md) preserves the
+exact hosted gates and nonblocking audit debt. Documentation added after tagging
+does not change either target. v0.1.0 is frozen; the next development milestone
+is **0.2.0 — Voice Flick**.
 
 ## Pre-1.0 compatibility
 

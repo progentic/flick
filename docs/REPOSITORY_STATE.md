@@ -1,20 +1,25 @@
 # Repository State
 
-Version: 1.0\
-Last Reviewed: 2026-09-16\
+Version: 1.1\
+Last Reviewed: 2026-09-17\
 Status: Active
 
-## Current baseline: validated v0.0.1 bootstrap; active v0.1.0 candidate
+## Current baseline: accepted v0.1.0; next milestone v0.2.0
 
-The repository bootstrap commit is `f802005ad49e9b3074cbc2bc35d6212dedc2ade8`.
-Hosted Repository Governance and Swift Packages passed against that exact commit.
-The local v0.0.1 tag is absent. No tag has been created or moved during application work.
+`v0.1.0 — Text Flick / Running Kernel` is **ACCEPTED** at
+`2ec113ca9ea94092d2a00f38a3280938bc08d17f`. Hosted governance, all 78 package tests,
+app build and the complete 12-test UI suite passed for that exact source.
+Human visual approval and the approved fingerprint remain unchanged.
 
-The current working tree implements a v0.1.0 text-kernel candidate. This is not
-an accepted/released v0.1.0: human visual approval is recorded for the current
-fingerprint, while hosted CI on its future exact candidate commit remains required. Current evidence is recorded in
-`verification/v0.1.0/RESULTS.md`. The following v0.0.0 sections are historical
-bootstrap context, not a claim that the current checkout is blank.
+Annotated tag `v0.0.1` targets validated bootstrap
+`f802005ad49e9b3074cbc2bc35d6212dedc2ade8`. Annotated tag `v0.1.0` targets the
+accepted application commit above. Both were pushed as `progentic` on 2026-09-17.
+See [the final verification record](verification/v0.1.0/ACCEPTANCE.md), including
+nonblocking native-audit debt and the historical local Xcode 27 failure.
+
+v0.1.0 is frozen. **0.2.0 — Voice Flick** is the next development milestone;
+voice implementation is not part of this release bookkeeping. The following
+v0.0.0 sections retain historical context, not the current implementation status.
 
 ### Authoritative at v0.0.0
 
@@ -49,14 +54,14 @@ A September 15 review observed a partial source export containing:
 That review is retained under `docs/reviews/` as evidence. It does not become the
 new implementation baseline merely by being present.
 
-## Next state: v0.0.1
+## Historical bootstrap acceptance boundary
 
 `v0.0.1` is reached only when the bootstrap acceptance gates in
 `docs/ROADMAP.md` and `TASK_PROMPT-v0.0.0-to-v0.0.1.md` are satisfied.
 
 Do not tag `v0.0.1` merely because files were copied into the repository.
 
-## Current candidate scope
+## Accepted v0.1.0 scope
 
 - Eight-package graph retained; no later-milestone package restructuring.
 - Native iOS text capture/feed, disk-backed SwiftData Schema V1, local Note
@@ -65,5 +70,5 @@ Do not tag `v0.0.1` merely because files were copied into the repository.
   system-surface, EventKit, or cloud feature.
 - ADR-0001 through ADR-0007 remain Proposed. Implementation evidence does not
   substitute for owner acceptance.
-- No application commit, push, tag, or hosted CI run has been authorized by the
-  current task. See the current results for exact local checks and open gates.
+- Owner acceptance and milestone tag pushes are recorded in the final verification
+  record. No binary distribution or App Store submission was performed.

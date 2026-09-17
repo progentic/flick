@@ -1,7 +1,7 @@
 # Flick Product Roadmap
 
-Version: 1.2\
-Last Reviewed: 2026-09-16\
+Version: 1.3\
+Last Reviewed: 2026-09-17\
 Status: Active planning document
 
 ## Purpose
@@ -38,7 +38,13 @@ That commit established eight package manifests, repository governance, hosted
 CI, documentation, and 41 `FlickDomain` tests. Repository Governance and Swift
 Packages passed against that exact source revision.
 
-`0.1.0` is the active development target.
+`0.1.0 — Text Flick / Running Kernel` is **ACCEPTED** and frozen at annotated
+tag `v0.1.0`, targeting `2ec113ca9ea94092d2a00f38a3280938bc08d17f`.
+The bootstrap is tagged `v0.0.1` at the commit above.
+See [the final verification record](verification/v0.1.0/ACCEPTANCE.md).
+
+The next development milestone is **`0.2.0 — Voice Flick`**. Its implementation
+has not begun as part of the v0.1.0 release bookkeeping.
 
 A tag or release must always resolve to the exact validated commit; mutable
 release metadata never substitutes for source/CI evidence.

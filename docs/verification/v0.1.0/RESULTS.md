@@ -1,7 +1,11 @@
-# v0.1.0 Text Flick — candidate handoff
+# v0.1.0 Text Flick — historical candidate handoff
 
 Date: 2026-09-16
 
+> **Final disposition: ACCEPTED** at `2ec113ca9ea94092d2a00f38a3280938bc08d17f`.
+> See the [final verification record](ACCEPTANCE.md) for exact-source hosted gates,
+> retained audit debt and release tags. The original results below are historical.
+>
 > This is the original implementation handoff. The subsequent `c279cc3` hosted
 > run failed 4 UI tests. See [UI test synchronization repair](UI-TEST-SYNCHRONIZATION.md)
 > for the corrective harness changes and new validation evidence.

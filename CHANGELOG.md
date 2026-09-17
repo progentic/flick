@@ -11,6 +11,15 @@ increasing integer build number.
 
 ## [Unreleased]
 
+Next development milestone: `0.2.0 — Voice Flick`. No implementation changes yet.
+
+## [0.1.0] - 2026-09-17
+
+**ACCEPTED — Text Flick / Running Kernel.** Annotated tag `v0.1.0` targets
+`2ec113ca9ea94092d2a00f38a3280938bc08d17f` and is frozen.
+
+### Changed
+
 - Refine capture into distinct editing, saving, brief saved, and retry states;
   localize processing progress/failure to its feed row and adapt the composer
   layout at accessibility text sizes.
@@ -36,24 +45,22 @@ increasing integer build number.
 - Signed simulator build/run/test entry points and an actual hosted app/UI-test path.
 - Application composition now connects capture, persisted feed, retry, and delete capabilities.
 
-## [v0.0.0]
-
-### Added
-
-- Nothing yet. Changes implemented toward `0.1.0` should be recorded here as
-  they land.
-
-### Changed
-
-- Nothing yet.
-
 ### Fixed
 
-- Nothing yet.
+- Synchronize editor typing on editable/focused state and persistence/recovery
+  assertions on committed records rather than the transient Saved label.
+- Verify acknowledged simulator appearance using an app-owned canvas region and
+  a real Light negative control; retain hosted diagnostic evidence.
 
-### Security
+### Verification
 
-- Nothing yet.
+- Exact-source hosted governance, package/app build and 78 package tests: PASS.
+- Full hosted UI suite: PASS, 12/12, zero failures or skips.
+- Human visual approval and approved UI fingerprint: unchanged.
+- Native contrast-audit variability remains nonblocking test-infrastructure debt;
+  no timestamp-color defect was established and no production styling was changed
+  to obtain the final hosted pass.
+- See [final verification](docs/verification/v0.1.0/ACCEPTANCE.md).
 
 ## [0.0.1] - 2026-09-16
 

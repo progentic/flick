@@ -112,6 +112,7 @@
 ./docs/history/partial-export/Packages/CEPipelines/Tests/CEPipelinesTests/CEPipelinesTests.swift.txt
 ./docs/reviews/2026-09-15-partial-export-review.md
 ./docs/verification/bootstrap-v0.0.1.md
+./docs/verification/v0.1.0/ACCEPTANCE.md
 ./docs/verification/v0.1.0/DARK-MODE-INVESTIGATION.md
 ./docs/verification/v0.1.0/GALLERY.md
 ./docs/verification/v0.1.0/RESULTS.md

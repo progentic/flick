@@ -1,8 +1,9 @@
 # Architecture
 
-> Baseline: bootstrap commit `f802005` passed hosted CI. The v0.1.0 text kernel
-> described below is an uncommitted candidate; later-milestone architecture remains
-> proposed. Historical partial-source exports are evidence only.
+> Baseline: v0.1.0 text kernel accepted at `2ec113c`, tagged `v0.1.0`.
+> See [final verification](verification/v0.1.0/ACCEPTANCE.md).
+> Later-milestone architecture and ADRs remain proposed. Historical partial-source
+> exports are evidence only.
 
 Version: 1.0
 Last Reviewed: 2026-09-16

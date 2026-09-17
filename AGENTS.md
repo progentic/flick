@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Version: 2.0\
-Last Reviewed: 2026-09-16\
+Version: 2.1\
+Last Reviewed: 2026-09-17\
 Status: Active repository policy
 
 This file is the operating contract for coding agents working on Flick.
@@ -9,9 +9,12 @@ This file is the operating contract for coding agents working on Flick.
 ## Current baseline
 
 The validated repository bootstrap is `f802005ad49e9b3074cbc2bc35d6212dedc2ade8`.
-Its hosted governance and package CI passed. The active working-tree milestone
-is v0.1.0; do not extend the bootstrap result to uncommitted application changes.
-No v0.0.1 tag was present when v0.1.0 work began.
+It is tagged `v0.0.1`. The accepted text kernel is tagged `v0.1.0` at
+`2ec113ca9ea94092d2a00f38a3280938bc08d17f`; its exact-source hosted governance,
+package/app gates and full UI suite passed. See
+`docs/verification/v0.1.0/ACCEPTANCE.md` for owner acceptance and retained audit debt.
+v0.1.0 is frozen. The next development milestone is `0.2.0 — Voice Flick`.
+Do not extend either tagged result to later unverified changes.
 
 Do not infer implementation completeness from:
 

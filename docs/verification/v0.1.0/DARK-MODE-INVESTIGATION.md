@@ -1,8 +1,10 @@
 # Dark Mode validation discrepancy after synchronization repairs
 
 Base: `840cfb31c76c62a93732db3dee5b7ce4f697c674`.
-Status: **INCONCLUSIVE for acceptance**. No production color change is justified
-by the evidence recorded here. The two questions below remain separate.
+Final milestone status: **ACCEPTED** at `2ec113ca9ea94092d2a00f38a3280938bc08d17f`;
+see [the final verification record](ACCEPTANCE.md). The observations below retain
+their original outcomes. Audit variability is nonblocking test-infrastructure
+debt; no production color defect was established. The two questions remain separate.
 
 ## 1. What did the app render?
 
