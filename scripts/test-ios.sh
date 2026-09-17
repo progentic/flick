@@ -12,6 +12,7 @@ for tool in python3 xcrun xcodebuild; do
   fi
 done
 device="${1:-}"
+if [[ $# -gt 0 ]]; then shift; fi
 if [[ -z "$device" ]]; then
   device="$(xcrun simctl list devices available -j | python3 -c '
 import json, sys
@@ -26,7 +27,28 @@ if [[ -z "$device" ]]; then
   exit 2
 fi
 output="${FLICK_UI_TEST_DIR:-$(mktemp -d /tmp/flick-ui.XXXXXX)}"
+mkdir -p "$output"
+xcrun simctl bootstatus "$device" -b
+fixture="$(mktemp -d /tmp/flick-appearance.XXXXXX)"
+python3 "$root/scripts/ui_appearance_fixture.py" "$device" "$fixture" > "$output/appearance-fixture.log" 2>&1 &
+fixture_pid=$!
+cleanup_fixture() {
+  kill "$fixture_pid" 2>/dev/null || true
+  wait "$fixture_pid" 2>/dev/null || true
+  rm -rf "$fixture"
+}
+trap cleanup_fixture EXIT
+export TEST_RUNNER_FLICK_APPEARANCE_FIXTURE="$fixture"
+{
+  git -C "$root" rev-parse HEAD
+  shasum -a 256 "$root/App/FlickUITests/FlickUITests.swift"
+  printf 'selected_simulator=%s\n' "$device"
+  xcodebuild -version
+  swift --version
+  xcrun simctl list devices available -j
+  xcrun simctl list runtimes -j
+} > "$output/environment.txt" 2>&1
 xcodebuild -project "$root/App/Flick.xcodeproj" -scheme Flick \
   -destination "platform=iOS Simulator,id=$device" -derivedDataPath "$output/build" \
   -parallel-testing-enabled NO -resultBundlePath "$output/Flick.xcresult" -collect-test-diagnostics never \
-  CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES test
+  CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES test "$@" 2>&1 | tee "$output/xcodebuild.log"

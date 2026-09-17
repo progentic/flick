@@ -112,11 +112,17 @@
 ./docs/history/partial-export/Packages/CEPipelines/Tests/CEPipelinesTests/CEPipelinesTests.swift.txt
 ./docs/reviews/2026-09-15-partial-export-review.md
 ./docs/verification/bootstrap-v0.0.1.md
+./docs/verification/v0.1.0/DARK-MODE-INVESTIGATION.md
 ./docs/verification/v0.1.0/GALLERY.md
 ./docs/verification/v0.1.0/RESULTS.md
 ./docs/verification/v0.1.0/UI-TEST-SYNCHRONIZATION.md
 ./docs/verification/v0.1.0/VISUAL-APPROVAL.md
 ./docs/verification/v0.1.0/diagnostics.json
+./docs/verification/v0.1.0/diagnostics/dark-mode/acknowledged-dark.png
+./docs/verification/v0.1.0/diagnostics/dark-mode/dark-editor-region.png
+./docs/verification/v0.1.0/diagnostics/dark-mode/flagged-timestamp.png
+./docs/verification/v0.1.0/diagnostics/dark-mode/light-editor-region.png
+./docs/verification/v0.1.0/diagnostics/dark-mode/reported-dark-rendered-light.png
 ./docs/verification/v0.1.0/timing.json
 ./docs/verification/v0.1.0/ui/01-empty-light-accessibility.txt
 ./docs/verification/v0.1.0/ui/01-empty-light.png
@@ -160,5 +166,6 @@
 ./scripts/test-ios.sh
 ./scripts/tests/test_governance.py
 ./scripts/ui-enforce.sh
+./scripts/ui_appearance_fixture.py
 ./scripts/validate-packages.sh
 ./scripts/validate_packages.py

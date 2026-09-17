@@ -159,10 +159,10 @@ final class FlickUITests: XCTestCase {
     }
 
     @MainActor func testDarkAndAccessibilityTextLayout() throws {
-        let app = configuredApp()
-        XCUIDevice.shared.appearance = .dark
-        app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        let app = configuredApp(dark: true)
+        app.launchArguments = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
+        try waitForCanvasAppearance(app, dark: true)
         try focusEditorAndType(app, "A longer thought stays readable with larger text.")
         XCTAssertFalse(app.staticTexts["A thought worth keeping."].exists)
         dismissKeyboard(app)
@@ -185,15 +185,17 @@ final class FlickUITests: XCTestCase {
     }
 
     @MainActor func testDarkFeedAndAccessibilityAudit() throws {
-        let app = configuredApp()
-        XCUIDevice.shared.appearance = .dark
+        let app = configuredApp(dark: true)
         app.launch()
+        try waitForCanvasAppearance(app, dark: true)
         try focusEditorAndType(app, "Take a quiet moment tomorrow.")
         app.buttons["saveThought"].tap()
         dismissKeyboard(app)
         XCTAssertTrue(app.staticTexts["Note ready"].waitForExistence(timeout: 10))
         record(app, "10-dark-feed")
-        assertDarkCanvas()
+        let canvas = try captureCanvas(app, name: "dark-canvas")
+        XCTAssertTrue(canvas.isDark, "The empty editor canvas must render dark; see attached region evidence")
+        print("AUDIT_RUNNER_TRAITS: \(UITraitCollection.current)")
         try app.performAccessibilityAudit(for: [.contrast, .hitRegion, .sufficientElementDescription, .trait, .textClipped])
     }
 
@@ -201,6 +203,9 @@ final class FlickUITests: XCTestCase {
         let app = configuredApp()
         app.launch()
         XCTAssertTrue(app.staticTexts["No notes yet."].waitForExistence(timeout: 15))
+        let canvas = try captureCanvas(app, name: "light-canvas-negative-control")
+        XCTAssertTrue(canvas.isLight, "The negative control must actually render a light canvas")
+        XCTAssertFalse(canvas.isDark, "The same Dark Mode predicate must reject Light Mode")
         try app.performAccessibilityAudit(for: [.contrast, .hitRegion, .sufficientElementDescription, .trait, .textClipped])
         record(app, "12-light-accessibility-audit")
     }
@@ -326,11 +331,14 @@ final class FlickUITests: XCTestCase {
         try StoreProbe(namespace: XCTUnwrap(app.launchEnvironment["FLICK_TEST_STORE"]))
     }
 
-    @MainActor private func configuredApp() -> XCUIApplication {
+    @MainActor private func configuredApp(dark: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
+        XCUIApplication().terminate()
         XCUIDevice.shared.orientation = .portrait
-        XCUIDevice.shared.appearance = .light
+        do { try requestSystemAppearance(dark: dark) }
+        catch { XCTFail("Appearance fixture failed: \(error)") }
         let app = XCUIApplication()
+        app.launchArguments = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryL"]
         app.launchEnvironment["FLICK_TEST_STORE"] = UUID().uuidString
         return app
     }
@@ -370,24 +378,111 @@ final class FlickUITests: XCTestCase {
         add(hierarchy)
     }
 
-    /// A mode-setting API returning success is insufficient: inspect rendered
-    /// canvas pixels independently of the application's token implementation.
-    @MainActor private func assertDarkCanvas() {
-        guard let image = XCUIScreen.main.screenshot().image.cgImage else {
-            XCTFail("Missing rendered screen image")
-            return
+    @MainActor private func requestSystemAppearance(dark: Bool) throws {
+        let directory = try XCTUnwrap(ProcessInfo.processInfo.environment["FLICK_APPEARANCE_FIXTURE"],
+            "Run UI tests through scripts/test-ios.sh so the simulator fixture is available")
+        let root = URL(fileURLWithPath: directory)
+        let ready = root.appendingPathComponent("ready")
+        waitForFile(ready)
+        let selected = try String(contentsOf: ready, encoding: .utf8)
+        XCTAssertEqual(selected, ProcessInfo.processInfo.environment["SIMULATOR_UDID"],
+                       "Appearance fixture must control this test's simulator")
+        let id = UUID().uuidString
+        let request = ["id": id, "appearance": dark ? "dark" : "light"]
+        let data = try JSONSerialization.data(withJSONObject: request)
+        try data.write(to: root.appendingPathComponent("requests/" + id + ".json"), options: .atomic)
+        let response = root.appendingPathComponent("responses/" + id + ".json")
+        waitForFile(response)
+        let result = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: response)) as? [String: Any])
+        XCTAssertEqual(result["id"] as? String, id)
+        XCTAssertEqual(result["ok"] as? Bool, true, "System appearance acknowledgement: \(result)")
+        XCTAssertEqual(result["actual"] as? String, request["appearance"])
+    }
+
+    @MainActor private func waitForFile(_ url: URL) {
+        let exists = NSPredicate { _, _ in FileManager.default.fileExists(atPath: url.path) }
+        let observed = XCTNSPredicateExpectation(predicate: exists, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [observed], timeout: 30), .completed,
+                       "Appearance fixture did not acknowledge its operation")
+    }
+
+    @MainActor private func waitForCanvasAppearance(_ app: XCUIApplication, dark: Bool) throws {
+        waitForElement(input(app), predicate: "exists == true AND enabled == true AND hittable == true")
+        var failure: Error?
+        let rendered = NSPredicate { _, _ in
+            do {
+                let sample = try self.readCanvas(app).sample
+                return dark ? sample.isDark : sample.isLight
+            } catch { failure = error; return true }
         }
-        var pixel = [UInt8](repeating: 0, count: 4)
-        pixel.withUnsafeMutableBytes { bytes in
-            let context = CGContext(data: bytes.baseAddress, width: 1, height: 1,
-                bitsPerComponent: 8, bytesPerRow: 4, space: CGColorSpaceCreateDeviceRGB(),
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-            context.translateBy(x: -CGFloat(image.width) * 0.02, y: -CGFloat(image.height) * 0.5)
-            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
-        }
-        XCTAssertEqual(pixel[3], 255)
-        XCTAssertLessThan((Int(pixel[0]) + Int(pixel[1]) + Int(pixel[2])) / 3, 80,
-                          "The rendered canvas must actually be dark")
+        let observed = XCTNSPredicateExpectation(predicate: rendered, object: nil)
+        let result = XCTWaiter.wait(for: [observed], timeout: 15)
+        if let failure { throw failure }
+        _ = try captureCanvas(app, name: "appearance-ready-" + (dark ? "dark" : "light"))
+        XCTAssertEqual(result, .completed, "Requested appearance must reach the app-owned canvas")
+    }
+
+    /// Observe the background owned by the empty editor, not the screen edge.
+    /// The region lies below the placeholder and inside the editor's padding.
+    @MainActor private func captureCanvas(_ app: XCUIApplication, name: String) throws -> CanvasSample {
+        let editor = input(app)
+        waitForElement(editor, predicate: "exists == true AND hittable == true")
+        XCTAssertFalse(app.keyboards.element.exists)
+        let value = editor.value as? String
+        XCTAssertTrue(value == "" || value == editor.placeholderValue, "Sample only an empty editor")
+        let frame = try readCanvas(app)
+        recordCanvas(frame.screenshot, cropped: frame.cropped, region: frame.region,
+                     sample: frame.sample, app: app, name: name)
+        return frame.sample
+    }
+
+    @MainActor private func readCanvas(_ app: XCUIApplication) throws
+        -> (screenshot: XCUIScreenshot, cropped: CGImage, region: CGRect, sample: CanvasSample) {
+        let screenshot = app.screenshot()
+        let image = try XCTUnwrap(screenshot.image.cgImage)
+        let region = try canvasRegion(editor: input(app).frame, app: app.frame, image: image)
+        let cropped = try XCTUnwrap(image.cropping(to: region))
+        return (screenshot, cropped, region, try CanvasSample(image: cropped))
+    }
+
+    private func canvasRegion(editor: CGRect, app: CGRect, image: CGImage) throws -> CGRect {
+        XCTAssertGreaterThanOrEqual(editor.height, 40, "Need blank lines below the placeholder")
+        let points = CGRect(x: editor.maxX - 24, y: editor.maxY - 20, width: 8, height: 8)
+        XCTAssertTrue(editor.insetBy(dx: 8, dy: 8).contains(points))
+        XCTAssertTrue(app.contains(points), "Sample must stay within the app screenshot")
+        let xScale = CGFloat(image.width) / app.width
+        let yScale = CGFloat(image.height) / app.height
+        return CGRect(x: (points.minX - app.minX) * xScale, y: (points.minY - app.minY) * yScale,
+                      width: points.width * xScale, height: points.height * yScale).integral
+    }
+
+    @MainActor private func recordCanvas(_ screenshot: XCUIScreenshot, cropped: CGImage, region: CGRect,
+                                        sample: CanvasSample, app: XCUIApplication, name: String) {
+        let full = XCTAttachment(screenshot: screenshot)
+        full.name = name + "-app"; full.lifetime = .keepAlways; add(full)
+        let patch = XCTAttachment(image: UIImage(cgImage: cropped))
+        patch.name = name + "-sampled-region"; patch.lifetime = .keepAlways; add(patch)
+        let evidence = """
+        test=\(self.name)
+        runtime=\(ProcessInfo.processInfo.operatingSystemVersionString)
+        simulator=\(ProcessInfo.processInfo.environment["SIMULATOR_UDID"] ?? "unavailable")
+        reported_device_appearance=\(XCUIDevice.shared.appearance.rawValue)
+        app_appearance_trait=not exposed by public XCTest; evaluated from app-owned pixels
+        launch_arguments=\(app.launchArguments)
+        app_size_classes=\(app.horizontalSizeClass.rawValue),\(app.verticalSizeClass.rawValue)
+        app_state=\(app.state.rawValue)
+        app_frame=\(app.frame); editor_frame=\(input(app).frame)
+        image_pixels=\(screenshot.image.cgImage!.width)x\(screenshot.image.cgImage!.height)
+        image_orientation=\(screenshot.image.imageOrientation.rawValue); uiimage_scale=\(screenshot.image.scale)
+        sampled_pixel_rect=\(region)
+        source=empty editor background; 8x8 points, inset from text/border
+        mean_rgb=\(sample.red),\(sample.green),\(sample.blue)
+        mean_brightness=\(sample.mean); spread=\(sample.spread); opaque=\(sample.opaque)
+        dark_predicate=\(sample.isDark); light_predicate=\(sample.isLight)
+        """
+        print("CANVAS_EVIDENCE\n" + evidence)
+        let metadata = XCTAttachment(string: evidence)
+        metadata.name = name + "-metadata"; metadata.lifetime = .keepAlways; add(metadata)
     }
 }
 
@@ -518,3 +613,34 @@ private final class SQLiteConnection {
 }
 
 private struct SQLiteProbeError: Error { let code: Int32 }
+
+
+private struct CanvasSample {
+    let red: Double
+    let green: Double
+    let blue: Double
+    let spread: Double
+    let opaque: Bool
+    var mean: Double { (red + green + blue) / 3 }
+    var isDark: Bool { opaque && spread <= 12 && mean < 80 }
+    var isLight: Bool { opaque && spread <= 12 && mean > 200 }
+
+    init(image: CGImage) throws {
+        let count = image.width * image.height
+        var bytes = [UInt8](repeating: 0, count: count * 4)
+        try bytes.withUnsafeMutableBytes { buffer in
+            let context = try XCTUnwrap(CGContext(data: buffer.baseAddress,
+                width: image.width, height: image.height, bitsPerComponent: 8,
+                bytesPerRow: image.width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        }
+        let pixels = stride(from: 0, to: bytes.count, by: 4)
+        red = pixels.reduce(0.0) { $0 + Double(bytes[$1]) } / Double(count)
+        green = pixels.reduce(0.0) { $0 + Double(bytes[$1 + 1]) } / Double(count)
+        blue = pixels.reduce(0.0) { $0 + Double(bytes[$1 + 2]) } / Double(count)
+        let brightness = pixels.map { (Double(bytes[$0]) + Double(bytes[$0 + 1]) + Double(bytes[$0 + 2])) / 3 }
+        spread = try XCTUnwrap(brightness.max()) - XCTUnwrap(brightness.min())
+        opaque = pixels.allSatisfy { bytes[$0 + 3] == 255 }
+    }
+}
